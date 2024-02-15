@@ -16,27 +16,13 @@
 
 package com.tylerkindy.url;
 
-import java.util.Objects;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public final class Url {
-  private final String url;
+import org.junit.jupiter.api.Test;
 
-  public static Url parse(String url) {
-    return new Url(url);
-  }
-
-  // Visible for testing
-  Url(String url) {
-    this.url = url;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return this == o || o instanceof Url u && Objects.equals(url, u.url);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(url);
+class UrlTest {
+  @Test
+  void itParsesUrls() {
+    assertThat(Url.parse("https://example.com/foo")).isEqualTo(new Url("https://example.com/foo"));
   }
 }
