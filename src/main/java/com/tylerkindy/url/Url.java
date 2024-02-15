@@ -39,4 +39,9 @@ public final class Url {
   public int hashCode() {
     return Objects.hashCode(url);
   }
+
+  @Override
+  public String toString() {
+    return url;
+  }
 }

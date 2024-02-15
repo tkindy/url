@@ -17,12 +17,41 @@
 package com.tylerkindy.url;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import com.tylerkindy.url.testdata.TestCase.Failure;
+import com.tylerkindy.url.testdata.TestCase.Success;
+import com.tylerkindy.url.testdata.TestCaseReader;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 class UrlTest {
   @Test
   void itParsesUrls() {
     assertThat(Url.parse("https://example.com/foo")).isEqualTo(new Url("https://example.com/foo"));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> urlTestDataTests() {
+    return TestCaseReader.testCases()
+        .map(testCase -> {
+          switch (testCase) {
+            case Success success -> {
+              return dynamicTest("'" + success.input() + "' successfully parses", () -> {
+                Url parsed = Url.parse(success.input());
+                assertThat(parsed.toString()).isEqualTo(success.href());
+              });
+            }
+            case Failure failure -> {
+              return dynamicTest("'" + failure.input() + "' fails to parse", () -> {
+                assertThatExceptionOfType(RuntimeException.class)
+                    .isThrownBy(() -> Url.parse(failure.input()));
+              });
+            }
+          }
+        });
   }
 }

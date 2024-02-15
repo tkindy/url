@@ -22,30 +22,28 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import java.io.IOException;
-import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class TestCaseReader {
-  public static void main(String[] args) {
+  public static Stream<TestCase> testCases() {
     ObjectMapper objectMapper = new ObjectMapper()
         .registerModule(new Jdk8Module());
 
-    List<TestCase> testCases;
+    ArrayNode testCaseArray;
     try (var urlTestData = TestCaseReader.class.getResourceAsStream("/urltestdata.json")) {
-      ArrayNode node = objectMapper.readValue(urlTestData, new TypeReference<>() {});
-      testCases = StreamSupport.stream(node.spliterator(), false)
+      testCaseArray = objectMapper.readValue(urlTestData, new TypeReference<>() {});
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return StreamSupport.stream(testCaseArray.spliterator(), false)
           .filter(ObjectNode.class::isInstance)
           .map(ObjectNode.class::cast)
           .map(o -> {
             o.remove("comment");
             o.remove("searchParams"); // TODO: test these?
             return objectMapper.convertValue(o, TestCase.class);
-          })
-          .toList();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    testCases.forEach(System.out::println);
+          });
   }
 }
