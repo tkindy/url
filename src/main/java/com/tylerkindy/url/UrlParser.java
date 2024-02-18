@@ -16,15 +16,10 @@
 
 package com.tylerkindy.url;
 
-import static java.util.function.Predicate.not;
-
-import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 final class UrlParser {
   public static final UrlParser INSTANCE = new UrlParser();
