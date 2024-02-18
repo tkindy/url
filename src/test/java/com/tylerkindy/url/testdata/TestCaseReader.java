@@ -27,8 +27,7 @@ import java.util.stream.StreamSupport;
 
 public class TestCaseReader {
   public static Stream<TestCase> testCases() {
-    ObjectMapper objectMapper = new ObjectMapper()
-        .registerModule(new Jdk8Module());
+    ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
 
     ArrayNode testCaseArray;
     try (var urlTestData = TestCaseReader.class.getResourceAsStream("/urltestdata.json")) {
@@ -38,12 +37,13 @@ public class TestCaseReader {
     }
 
     return StreamSupport.stream(testCaseArray.spliterator(), false)
-          .filter(ObjectNode.class::isInstance)
-          .map(ObjectNode.class::cast)
-          .map(o -> {
-            o.remove("comment");
-            o.remove("searchParams"); // TODO: test these?
-            return objectMapper.convertValue(o, TestCase.class);
-          });
+        .filter(ObjectNode.class::isInstance)
+        .map(ObjectNode.class::cast)
+        .map(
+            o -> {
+              o.remove("comment");
+              o.remove("searchParams"); // TODO: test these?
+              return objectMapper.convertValue(o, TestCase.class);
+            });
   }
 }

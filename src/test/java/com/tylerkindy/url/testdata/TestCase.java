@@ -26,9 +26,10 @@ import com.tylerkindy.url.testdata.TestCase.Success;
 import java.util.Optional;
 
 @JsonTypeInfo(use = Id.DEDUCTION)
-@JsonSubTypes({ @Type(Success.class), @Type(Failure.class) })
+@JsonSubTypes({@Type(Success.class), @Type(Failure.class)})
 public sealed interface TestCase {
   String input();
+
   Optional<String> base();
 
   record Success(
@@ -44,15 +45,12 @@ public sealed interface TestCase {
       String port,
       String pathname,
       String search,
-      String hash
-  ) implements TestCase {}
+      String hash)
+      implements TestCase {}
 
   record Failure(
-      String input,
-      Optional<String> base,
-      boolean failure,
-      Optional<FailsRelativeTo> relativeTo
-  ) implements TestCase {
+      String input, Optional<String> base, boolean failure, Optional<FailsRelativeTo> relativeTo)
+      implements TestCase {
     public Failure {
       if (!failure) {
         throw new IllegalArgumentException("failure must be true!");

@@ -38,24 +38,35 @@ class UrlTest {
   @TestFactory
   Stream<DynamicTest> urlTestDataTests() {
     return TestCaseReader.testCases()
-        .map(testCase -> {
-          switch (testCase) {
-            case Success success -> {
-              return dynamicTest("'" + success.input() + "' successfully parses", () -> {
-                Url parsed = success.base()
-                    .map(base -> Url.parse(success.input(), Url.parse(base)))
-                    .orElseGet(() -> Url.parse(success.input()));
-                assertThat(parsed.toString()).isEqualTo(success.href());
-              });
-            }
-            case Failure failure -> {
-              return dynamicTest("'" + failure.input() + "' fails to parse", () -> {
-                Optional<Url> maybeBase = failure.base().map(Url::parse);
-                assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> maybeBase.map(base -> Url.parse(failure.input(), base))
-                    .orElseGet(() -> Url.parse(failure.input())));
-              });
-            }
-          }
-        });
+        .map(
+            testCase -> {
+              switch (testCase) {
+                case Success success -> {
+                  return dynamicTest(
+                      "'" + success.input() + "' successfully parses",
+                      () -> {
+                        Url parsed =
+                            success
+                                .base()
+                                .map(base -> Url.parse(success.input(), Url.parse(base)))
+                                .orElseGet(() -> Url.parse(success.input()));
+                        assertThat(parsed.toString()).isEqualTo(success.href());
+                      });
+                }
+                case Failure failure -> {
+                  return dynamicTest(
+                      "'" + failure.input() + "' fails to parse",
+                      () -> {
+                        Optional<Url> maybeBase = failure.base().map(Url::parse);
+                        assertThatExceptionOfType(RuntimeException.class)
+                            .isThrownBy(
+                                () ->
+                                    maybeBase
+                                        .map(base -> Url.parse(failure.input(), base))
+                                        .orElseGet(() -> Url.parse(failure.input())));
+                      });
+                }
+              }
+            });
   }
 }
