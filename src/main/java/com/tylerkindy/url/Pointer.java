@@ -67,4 +67,22 @@ final class Pointer {
   public boolean isEof() {
     return codePointIndex >= codePointLength;
   }
+
+  public boolean doesRemainingStartWith(String prefix) {
+    int remainingLength = s.length() - codeUnitIndex - 1;
+    if (remainingLength < prefix.length()) {
+      return false;
+    }
+
+    for (int i = 0; i < prefix.length(); i++) {
+      char sChar = s.charAt(codeUnitIndex + i + 1);
+      char prefixChar = prefix.charAt(i);
+
+      if (sChar != prefixChar) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }

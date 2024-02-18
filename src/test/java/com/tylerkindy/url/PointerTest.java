@@ -56,4 +56,34 @@ class PointerTest {
     p.advance();
     assertThat(p.isEof()).isTrue();
   }
+
+  @Test
+  void itExcludesCurrentCodePointFromRemaining() {
+    assertThat(new Pointer("abc").doesRemainingStartWith("a"))
+        .isFalse();
+  }
+
+  @Test
+  void itFindsSingleCharacterPrefixOfRemaining() {
+    assertThat(new Pointer("abc").doesRemainingStartWith("b"))
+        .isTrue();
+  }
+
+  @Test
+  void itFindsMultipleCharacterPrefixOfRemaining() {
+    assertThat(new Pointer("abcd").doesRemainingStartWith("bc"))
+        .isTrue();
+  }
+
+  @Test
+  void itMatchesEntireRemaining() {
+    assertThat(new Pointer("abc").doesRemainingStartWith("bc"))
+        .isTrue();
+  }
+
+  @Test
+  void itHandlesTooManyCharactersInRemainingPrefix() {
+    assertThat(new Pointer("abc").doesRemainingStartWith("bcd"))
+        .isFalse();
+  }
 }
