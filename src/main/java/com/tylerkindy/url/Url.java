@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class Url {
-  private final String url;
+  private final String scheme;
 
   public static Url parse(String url) {
     return UrlParser.parse(url, Optional.empty());
@@ -30,22 +30,22 @@ public final class Url {
     return UrlParser.parse(url, Optional.of(base));
   }
 
-  Url(String url) {
-    this.url = url;
+  Url(String scheme) {
+    this.scheme = scheme;
   }
 
   @Override
   public boolean equals(Object o) {
-    return this == o || o instanceof Url u && Objects.equals(url, u.url);
+    return this == o || o instanceof Url u && Objects.equals(scheme, u.scheme);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(url);
+    return Objects.hashCode(scheme);
   }
 
   @Override
   public String toString() {
-    return url;
+    return scheme + ":";
   }
 }

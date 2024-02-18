@@ -25,6 +25,6 @@ final class UrlParser {
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public static Url parse(String url, Optional<Url> base) {
-    return new Url(url);
+    return new Url("http");
   }
 }
