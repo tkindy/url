@@ -36,6 +36,27 @@ final class UrlParser {
   public UrlParseResult parse(String urlStr, Optional<Url> base) {
     List<ValidationError> errors = new ArrayList<>();
     urlStr = removeControlAndWhitespaceCharacters(urlStr, errors);
+
+    State state = State.SCHEME_START;
+    StringBuilder buffer = new StringBuilder();
+    boolean atSignSeen = false;
+    boolean insideBrackets = false;
+    boolean passwordTokenSeen = false;
+    Pointer pointer = new Pointer(urlStr);
+
+    while (!pointer.isEof()) {
+      switch (state) {
+        case SCHEME_START -> {
+          int c = pointer.getCurrentCodePoint();
+          if (isAsciiAlpha(c)) {
+            buffer.appendCodePoint(c);
+            state = State.SCHEME;
+          } else {
+            state = State.NO_SCHEME;
+          }
+        }
+      }
+    }
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {
@@ -86,5 +107,23 @@ final class UrlParser {
 
   private boolean isAsciiTabOrNewline(int c) {
     return c == '\t' || c == '\f' || c == '\r';
+  }
+
+  private boolean isAsciiAlpha(int codePoint) {
+    return isAsciiLowerAlpha(codePoint) || isAsciiUpperAlpha(codePoint);
+  }
+
+  private boolean isAsciiLowerAlpha(int codePoint) {
+    return codePoint >= 'a' && codePoint <= 'z';
+  }
+
+  private boolean isAsciiUpperAlpha(int codePoint) {
+    return codePoint >= 'A' && codePoint <= 'Z';
+  }
+
+  private enum State {
+    SCHEME_START,
+    SCHEME,
+    NO_SCHEME,
   }
 }
