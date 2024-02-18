@@ -175,6 +175,23 @@ final class UrlParser {
             }
           }
         }
+        case RELATIVE_SLASH -> {
+          if (SPECIAL_SCHEMES.contains(scheme) && (pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '\\')) {
+            if (pointer.getCurrentCodePoint() == '\\') {
+              errors.add(new InvalidReverseSolidus());
+            }
+            state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
+          } else if (pointer.getCurrentCodePoint() == '/') {
+            state = State.AUTHORITY;
+          } else {
+            username = base.get().username();
+            password = base.get().password();
+            host = base.get().host().orElse(null);
+            port = base.get().port().orElse(null);
+            state = State.PATH;
+            pointer.decrease();
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
