@@ -23,6 +23,7 @@ final class StringEscaper {
     for (int i = 0; i < input.length(); i++) {
       char c = input.charAt(i);
       switch (c) {
+        case ' ' -> sb.append("\\s");
         case '\t' -> sb.append("\\t");
         case '\n' -> sb.append("\\n");
         case '\f' -> sb.append("\\f");
