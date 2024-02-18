@@ -55,11 +55,8 @@ final class UrlParser {
     String query = null;
     String fragment = null;
 
-    boolean shouldAdvance;
     stateLoop:
     while (!pointer.isEof()) {
-      shouldAdvance = true;
-
       switch (state) {
         case SCHEME_START -> {
           int c = pointer.getCurrentCodePoint();
@@ -68,7 +65,7 @@ final class UrlParser {
             state = State.SCHEME;
           } else {
             state = State.NO_SCHEME;
-            shouldAdvance = false;
+            pointer.decrease();
           }
         }
         case SCHEME -> {
@@ -100,7 +97,7 @@ final class UrlParser {
             buffer = new StringBuilder();
             state = State.NO_SCHEME;
             pointer.reset();
-            shouldAdvance = false;
+            pointer.decrease();
           }
         }
         case NO_SCHEME -> {
@@ -116,10 +113,10 @@ final class UrlParser {
             state = State.FRAGMENT;
           } else if (!base.get().scheme().equals("file")) {
             state = State.RELATIVE;
-            shouldAdvance = false;
+            pointer.decrease();
           } else {
             state = State.FILE;
-            shouldAdvance = false;
+            pointer.decrease();
           }
         }
         case SPECIAL_RELATIVE_OR_AUTHORITY -> {
@@ -129,7 +126,7 @@ final class UrlParser {
           } else {
             errors.add(new SpecialSchemeMissingFollowingSolidus());
             state = State.RELATIVE;
-            shouldAdvance = false;
+            pointer.decrease();
           }
         }
         case PATH_OR_AUTHORITY -> {
@@ -137,7 +134,7 @@ final class UrlParser {
             state = State.AUTHORITY;
           } else {
             state = State.PATH;
-            shouldAdvance = false;
+            pointer.decrease();
           }
         }
         default -> {
@@ -145,9 +142,7 @@ final class UrlParser {
         }
       }
 
-      if (shouldAdvance) {
-        pointer.increase();
-      }
+      pointer.increase();
     }
 
     return new Success(new Url(scheme, path, query, fragment));
