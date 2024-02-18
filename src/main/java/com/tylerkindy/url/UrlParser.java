@@ -20,12 +20,13 @@ import com.tylerkindy.url.UrlParseResult.Success;
 import java.util.Optional;
 
 final class UrlParser {
+  public static final UrlParser INSTANCE = new UrlParser();
+
   private UrlParser() {
-    throw new RuntimeException();
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public static UrlParseResult parse(String url, Optional<Url> base) {
+  public UrlParseResult parse(String url, Optional<Url> base) {
     return new Success(new Url("http"));
   }
 }

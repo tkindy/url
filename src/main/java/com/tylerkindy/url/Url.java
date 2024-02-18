@@ -27,11 +27,11 @@ public final class Url {
   private final String scheme;
 
   public static Url parseOrThrow(String url) {
-    return extractOrThrow(url, UrlParser.parse(url, Optional.empty()));
+    return extractOrThrow(url, UrlParser.INSTANCE.parse(url, Optional.empty()));
   }
 
   public static Url parseOrThrow(String url, Url base) {
-    return extractOrThrow(url, UrlParser.parse(url, Optional.of(base)));
+    return extractOrThrow(url, UrlParser.INSTANCE.parse(url, Optional.of(base)));
   }
 
   private static Url extractOrThrow(String urlStr, UrlParseResult result) {
