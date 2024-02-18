@@ -91,7 +91,7 @@ final class UrlParser {
               state = State.SPECIAL_AUTHORITY_SLASHES;
             } else if (pointer.doesRemainingStartWith("/")) {
               state = State.PATH_OR_AUTHORITY;
-              pointer.advance();
+              pointer.increase();
             } else {
               path = new Opaque("");
               state = State.OPAQUE_PATH;
@@ -125,7 +125,7 @@ final class UrlParser {
         case SPECIAL_RELATIVE_OR_AUTHORITY -> {
           if (pointer.getCurrentCodePoint() == '/' && pointer.doesRemainingStartWith("/")) {
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
-            pointer.advance();
+            pointer.increase();
           } else {
             errors.add(new SpecialSchemeMissingFollowingSolidus());
             state = State.RELATIVE;
@@ -146,7 +146,7 @@ final class UrlParser {
       }
 
       if (shouldAdvance) {
-        pointer.advance();
+        pointer.increase();
       }
     }
 

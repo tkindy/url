@@ -25,7 +25,7 @@ class PointerTest {
   void itAdvancesOverAscii() {
     Pointer p = new Pointer("abcdef");
 
-    p.advance();
+    p.increase();
     assertThat(p.getCurrentCodePoint()).isEqualTo('b');
   }
 
@@ -33,7 +33,7 @@ class PointerTest {
   void itAdvancesOverSupplmentaryCharacters() {
     Pointer p = new Pointer("\uD800\uDC02\uD800\uDC14");
 
-    p.advance();
+    p.increase();
     assertThat(p.getCurrentCodePoint())
         .isEqualTo(Character.toCodePoint('\uD800', '\uDC14'));
   }
@@ -50,10 +50,10 @@ class PointerTest {
 
     assertThat(p.isEof()).isFalse();
 
-    p.advance();
+    p.increase();
     assertThat(p.isEof()).isFalse();
 
-    p.advance();
+    p.increase();
     assertThat(p.isEof()).isTrue();
   }
 
@@ -90,8 +90,17 @@ class PointerTest {
   @Test
   void itResets() {
     Pointer p = new Pointer("abc");
-    p.advance();
+    p.increase();
     p.reset();
+
+    assertThat(p.getCurrentCodePoint()).isEqualTo('a');
+  }
+
+  @Test
+  void itDecreases() {
+    Pointer p = new Pointer("abc");
+    p.increase();
+    p.decrease();
 
     assertThat(p.getCurrentCodePoint()).isEqualTo('a');
   }

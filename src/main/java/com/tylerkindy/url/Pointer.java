@@ -16,6 +16,9 @@
 
 package com.tylerkindy.url;
 
+import java.util.function.IntSupplier;
+import java.util.function.Predicate;
+
 final class Pointer {
   private final String s;
   private final int codePointLength;
@@ -37,29 +40,55 @@ final class Pointer {
     return s.codePointAt(codeUnitIndex);
   }
 
-  public void advance() {
-    advance(1);
+  public void increase() {
+    increase(1);
   }
 
-  public void advance(int numCodePoints) {
-    if (numCodePoints < 0) {
-      throw new IllegalArgumentException("Can't advance by a negative number: " + numCodePoints);
+  public void increase(int numCodePoints) {
+    move(numCodePoints);
+  }
+
+  public void decrease() {
+    decrease(1);
+  }
+
+  public void decrease(int numCodePoints) {
+    move(-1 * numCodePoints);
+  }
+
+  private void move(int numCodePoints) {
+    if (numCodePoints == 0) {
+      return;
+    }
+    
+    final IntSupplier nextCodePoint;
+    final IndexUpdater indexUpdater;
+    final Predicate<Pointer> isAtEnd;
+    if (numCodePoints > 0) {
+      nextCodePoint = this::getCurrentCodePoint;
+      indexUpdater = (index, amount) -> index + amount;
+      isAtEnd = Pointer::isEof;
+    } else {
+      nextCodePoint = () -> s.codePointBefore(codeUnitIndex);
+      indexUpdater = (index, amount) -> index - amount;
+      isAtEnd = p -> p.codePointIndex == 0;
+      numCodePoints *= -1;
     }
 
     for (int i = 0; i < numCodePoints; i++) {
-      if (isEof()) {
+      if (isAtEnd.test(this)) {
         return;
       }
 
-      int codePoint = getCurrentCodePoint();
+      int codePoint = nextCodePoint.getAsInt();
 
-      codePointIndex += 1;
+      codePointIndex = indexUpdater.update(codePointIndex, 1);
       if (codePoint <= 0xFFFF) {
         // Basic Multilingual Plane, made of one char
-        codeUnitIndex += 1;
+        codeUnitIndex = indexUpdater.update(codeUnitIndex, 1);
       } else {
         // supplementary character, made of two chars
-        codeUnitIndex += 2;
+        codeUnitIndex = indexUpdater.update(codeUnitIndex, 2);
       }
     }
   }
@@ -89,5 +118,10 @@ final class Pointer {
   public void reset() {
     codePointIndex = 0;
     codeUnitIndex = 0;
+  }
+  
+  @FunctionalInterface
+  private interface IndexUpdater {
+    int update(int index, int amount);
   }
 }
