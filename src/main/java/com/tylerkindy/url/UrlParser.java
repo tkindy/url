@@ -202,6 +202,14 @@ final class UrlParser {
             pointer.decrease();
           }
         }
+        case SPECIAL_AUTHORITY_IGNORE_SLASHES -> {
+          if (pointer.getCurrentCodePoint() != '/' && pointer.getCurrentCodePoint() != '\\') {
+            state = State.AUTHORITY;
+            pointer.decrease();
+          } else {
+            errors.add(new SpecialSchemeMissingFollowingSolidus());
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
