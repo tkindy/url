@@ -16,36 +16,15 @@
 
 package com.tylerkindy.url;
 
-import java.util.Objects;
 import java.util.Optional;
 
-public final class Url {
-  private final String url;
-
-  public static Url parse(String url) {
-    return UrlParser.parse(url, Optional.empty());
+final class UrlParser {
+  private UrlParser() {
+    throw new RuntimeException();
   }
 
-  public static Url parse(String url, Url base) {
-    return UrlParser.parse(url, Optional.of(base));
-  }
-
-  Url(String url) {
-    this.url = url;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return this == o || o instanceof Url u && Objects.equals(url, u.url);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(url);
-  }
-
-  @Override
-  public String toString() {
-    return url;
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+  public static Url parse(String url, Optional<Url> base) {
+    return new Url(url);
   }
 }
