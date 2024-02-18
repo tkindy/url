@@ -34,7 +34,7 @@ public sealed interface TestCase {
   default String name() {
     StringBuilder sb = new StringBuilder()
         .append('\'')
-        .append(input())
+        .append(StringEscaper.escape(input()))
         .append("'");
 
     base().ifPresent(base -> {
