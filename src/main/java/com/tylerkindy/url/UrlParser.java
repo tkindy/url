@@ -122,6 +122,9 @@ final class UrlParser {
             shouldAdvance = false;
           }
         }
+        default -> {
+          break stateLoop; // TODO: remove
+        }
       }
 
       if (shouldAdvance) {
