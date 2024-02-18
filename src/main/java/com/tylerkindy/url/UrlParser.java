@@ -22,6 +22,7 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
+import com.tylerkindy.url.ValidationError.InvalidCredentials;
 import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
@@ -45,7 +46,7 @@ final class UrlParser {
     urlStr = removeControlAndWhitespaceCharacters(urlStr, errors);
 
     State state = State.SCHEME_START;
-    StringBuilder buffer = new StringBuilder();
+    final StringBuilder buffer = new StringBuilder();
     boolean atSignSeen = false;
     boolean insideBrackets = false;
     boolean passwordTokenSeen = false;
@@ -79,7 +80,7 @@ final class UrlParser {
             buffer.appendCodePoint(Character.toLowerCase(c));
           } else if (c == ':') {
             scheme = buffer.toString();
-            buffer = new StringBuilder();
+            buffer.delete(0, buffer.length());
 
             if (scheme.equals("file")) {
               if (!pointer.doesRemainingStartWith("//")) {
@@ -99,7 +100,7 @@ final class UrlParser {
               state = State.OPAQUE_PATH;
             }
           } else {
-            buffer = new StringBuilder();
+            buffer.delete(0, buffer.length());
             state = State.NO_SCHEME;
             pointer.reset();
             pointer.decrease();
@@ -209,6 +210,25 @@ final class UrlParser {
           } else {
             errors.add(new SpecialSchemeMissingFollowingSolidus());
           }
+        }
+        case AUTHORITY -> {
+          if (pointer.getCurrentCodePoint() == '@') {
+            errors.add(new InvalidCredentials());
+            if (atSignSeen) {
+              buffer.insert(0, "%40");
+            }
+            atSignSeen = true;
+            Iterable<Integer> bufferCodePoints = () -> buffer.codePoints().iterator();
+            for (int codePoint : bufferCodePoints) {
+              if (codePoint == ':' && !passwordTokenSeen) {
+                passwordTokenSeen = true;
+                continue;
+              }
+              // TODO
+            }
+            // TODO
+          }
+          // TODO
         }
         default -> {
           break stateLoop; // TODO: remove

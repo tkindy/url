@@ -21,4 +21,5 @@ public sealed interface ValidationError {
   record SpecialSchemeMissingFollowingSolidus() implements ValidationError {}
   record MissingSchemeNonRelativeUrl() implements ValidationError {}
   record InvalidReverseSolidus() implements ValidationError {}
+  record InvalidCredentials() implements ValidationError {}
 }
