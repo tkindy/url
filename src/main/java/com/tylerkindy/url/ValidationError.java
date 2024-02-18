@@ -17,5 +17,5 @@
 package com.tylerkindy.url;
 
 public sealed interface ValidationError {
-  record InvalidUrlUnit() implements ValidationError {}
+  record InvalidUrlUnit(String message) implements ValidationError {}
 }
