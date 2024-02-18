@@ -32,7 +32,7 @@ import org.junit.jupiter.api.TestFactory;
 class UrlTest {
   @Test
   void itParsesUrls() {
-    assertThat(Url.parse("https://example.com/foo")).isEqualTo(new Url("https://example.com/foo"));
+    assertThat(Url.parse("https://example.com/foo").toString()).isEqualTo("https://example.com/foo");
   }
 
   @TestFactory

@@ -29,8 +29,7 @@ public final class Url {
     return new Url(url);
   }
 
-  // Visible for testing
-  Url(String url) {
+  private Url(String url) {
     this.url = url;
   }
 
