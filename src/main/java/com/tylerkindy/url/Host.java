@@ -16,17 +16,9 @@
 
 package com.tylerkindy.url;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public sealed interface UrlPath {
-  default UrlPath copy() {
-    return switch (this) {
-      case Opaque o -> o;
-      case NonOpaque(var segments) -> new NonOpaque(new ArrayList<>(segments));
-    };
-  }
-
-  record Opaque(String segment) implements UrlPath {}
-  record NonOpaque(List<String> segments) implements UrlPath {}
+public sealed interface Host {
+  record Domain(String domain) implements Host {}
+  record IpAddress(com.tylerkindy.url.IpAddress address) {}
+  record Opaque(String host) implements Host {}
+  record Empty() implements Host {}
 }

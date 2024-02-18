@@ -20,4 +20,5 @@ public sealed interface ValidationError {
   record InvalidUrlUnit(String message) implements ValidationError {}
   record SpecialSchemeMissingFollowingSolidus() implements ValidationError {}
   record MissingSchemeNonRelativeUrl() implements ValidationError {}
+  record InvalidReverseSolidus() implements ValidationError {}
 }

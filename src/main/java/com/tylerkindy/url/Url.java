@@ -25,6 +25,10 @@ import java.util.Optional;
 
 public final class Url {
   private final String scheme;
+  private final String username;
+  private final String password;
+  private final Host host;
+  private final Character port;
   private final UrlPath path;
   private final String query;
   private final String fragment;
@@ -45,8 +49,12 @@ public final class Url {
     };
   }
 
-  Url(String scheme, UrlPath path, String query, String fragment) {
+  Url(String scheme, String username, String password, Host host, Character port, UrlPath path, String query, String fragment) {
     this.scheme = scheme;
+    this.username = username;
+    this.password = password;
+    this.host = host;
+    this.port = port;
     this.path = path;
     this.query = query;
     this.fragment = fragment;
@@ -54,6 +62,22 @@ public final class Url {
 
   public String scheme() {
     return scheme;
+  }
+
+  public String username() {
+    return username;
+  }
+
+  public String password() {
+    return password;
+  }
+
+  public Optional<Host> host() {
+    return Optional.ofNullable(host);
+  }
+
+  public Optional<Character> port() {
+    return Optional.ofNullable(port);
   }
 
   public UrlPath path() {
@@ -73,6 +97,10 @@ public final class Url {
     return this == o ||
         o instanceof Url url &&
             Objects.equals(scheme, url.scheme) &&
+            Objects.equals(username, url.username) &&
+            Objects.equals(password, url.password) &&
+            Objects.equals(host, url.host) &&
+            Objects.equals(port, url.port) &&
             Objects.equals(path, url.path) &&
             Objects.equals(query, url.query) &&
             Objects.equals(fragment, url.fragment);
@@ -80,7 +108,7 @@ public final class Url {
 
   @Override
   public int hashCode() {
-    return Objects.hash(scheme, path, query, fragment);
+    return Objects.hash(scheme, username, password, host, port, path, query, fragment);
   }
 
   @Override

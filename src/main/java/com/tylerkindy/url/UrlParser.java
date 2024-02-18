@@ -22,6 +22,7 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
+import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
@@ -51,6 +52,10 @@ final class UrlParser {
     Pointer pointer = new Pointer(urlStr);
 
     String scheme = "";
+    String username = "";
+    String password = "";
+    Host host = null;
+    Character port = null;
     UrlPath path = new NonOpaque(List.of());
     String query = null;
     String fragment = null;
@@ -137,6 +142,39 @@ final class UrlParser {
             pointer.decrease();
           }
         }
+        case RELATIVE -> {
+          scheme = base.get().scheme();
+          if (pointer.getCurrentCodePoint() == '/') {
+            state = State.RELATIVE_SLASH;
+          } else if (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\') {
+            errors.add(new InvalidReverseSolidus());
+            state = State.RELATIVE_SLASH;
+          } else {
+            username = base.get().username();
+            password = base.get().password();
+            host = base.get().host().orElse(null);
+            port = base.get().port().orElse(null);
+            path = base.get().path().copy();
+            query = base.get().query().orElse(null);
+
+            if (pointer.getCurrentCodePoint() == '?') {
+              query = "";
+              state = State.QUERY;
+            } else if (pointer.getCurrentCodePoint() == '#') {
+              fragment = "";
+              state = State.FRAGMENT;
+            } else if (!pointer.isEof()) {
+              query = null;
+
+              if (path instanceof NonOpaque(var segments) && !segments.isEmpty()) {
+                path = new NonOpaque(segments.subList(0, segments.size() - 1));
+              }
+
+              state = State.PATH;
+              pointer.decrease();
+            }
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
@@ -145,7 +183,7 @@ final class UrlParser {
       pointer.increase();
     }
 
-    return new Success(new Url(scheme, path, query, fragment));
+    return new Success(new Url(scheme, username, password, host, port, path, query, fragment));
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {
