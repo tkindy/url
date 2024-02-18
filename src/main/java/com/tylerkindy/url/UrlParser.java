@@ -132,6 +132,14 @@ final class UrlParser {
             shouldAdvance = false;
           }
         }
+        case PATH_OR_AUTHORITY -> {
+          if (pointer.getCurrentCodePoint() == '/') {
+            state = State.AUTHORITY;
+          } else {
+            state = State.PATH;
+            shouldAdvance = false;
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
