@@ -16,6 +16,7 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +40,10 @@ final class UrlParser {
     boolean passwordTokenSeen = false;
     Pointer pointer = new Pointer(urlStr);
 
+    String scheme = "";
+
     boolean shouldAdvance;
-    while (!pointer.isEof()) {
+    stateLoop: while (!pointer.isEof()) {
       shouldAdvance = true;
 
       switch (state) {
@@ -54,12 +57,24 @@ final class UrlParser {
             shouldAdvance = false;
           }
         }
+        case SCHEME -> {
+          int c = pointer.getCurrentCodePoint();
+          if (isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.') {
+            buffer.appendCodePoint(Character.toLowerCase(c));
+          } else if (c == ':') {
+            scheme = buffer.toString();
+            buffer = new StringBuilder();
+            break stateLoop; // TODO: implement the rest
+          }
+        }
       }
 
       if (shouldAdvance) {
         pointer.advance();
       }
     }
+
+    return new Success(new Url(scheme));
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {
@@ -122,6 +137,14 @@ final class UrlParser {
 
   private boolean isAsciiUpperAlpha(int codePoint) {
     return codePoint >= 'A' && codePoint <= 'Z';
+  }
+
+  private boolean isAsciiAlphanumeric(int codePoint) {
+    return isAsciiAlpha(codePoint) || isAsciiDigit(codePoint);
+  }
+
+  private boolean isAsciiDigit(int codePoint) {
+    return codePoint >= '0' && codePoint <= '9';
   }
 
   private enum State {
