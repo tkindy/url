@@ -25,6 +25,9 @@ import java.util.Optional;
 
 public final class Url {
   private final String scheme;
+  private final UrlPath path;
+  private final String query;
+  private final String fragment;
 
   public static Url parseOrThrow(String url) {
     return extractOrThrow(url, UrlParser.INSTANCE.parse(url, Optional.empty()));
@@ -42,22 +45,42 @@ public final class Url {
     };
   }
 
-  Url(String scheme) {
+  Url(String scheme, UrlPath path, String query, String fragment) {
     this.scheme = scheme;
+    this.path = path;
+    this.query = query;
+    this.fragment = fragment;
   }
 
   public String scheme() {
     return scheme;
   }
 
+  public UrlPath path() {
+    return path;
+  }
+
+  public Optional<String> query() {
+    return Optional.ofNullable(query);
+  }
+
+  public Optional<String> fragment() {
+    return Optional.ofNullable(fragment);
+  }
+
   @Override
   public boolean equals(Object o) {
-    return this == o || o instanceof Url u && Objects.equals(scheme, u.scheme);
+    return this == o ||
+        o instanceof Url url &&
+            Objects.equals(scheme, url.scheme) &&
+            Objects.equals(path, url.path) &&
+            Objects.equals(query, url.query) &&
+            Objects.equals(fragment, url.fragment);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(scheme);
+    return Objects.hash(scheme, path, query, fragment);
   }
 
   @Override

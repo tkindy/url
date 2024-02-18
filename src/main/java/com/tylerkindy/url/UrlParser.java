@@ -18,10 +18,12 @@ package com.tylerkindy.url;
 
 import static java.util.function.Predicate.isEqual;
 
+import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
+import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +52,8 @@ final class UrlParser {
 
     String scheme = "";
     UrlPath path = new NonOpaque(List.of());
+    String query = null;
+    String fragment = null;
 
     boolean shouldAdvance;
     stateLoop:
@@ -99,6 +103,25 @@ final class UrlParser {
             shouldAdvance = false;
           }
         }
+        case NO_SCHEME -> {
+          if (base.isEmpty()
+              || (base.get().path() instanceof Opaque && pointer.getCurrentCodePoint() != '#')) {
+            errors.add(new MissingSchemeNonRelativeUrl());
+            return new Failure(errors);
+          } else if (base.get().path() instanceof Opaque) {
+            scheme = base.get().scheme();
+            path = base.get().path();
+            query = base.get().query().orElse(null);
+            fragment = "";
+            state = State.FRAGMENT;
+          } else if (!base.get().scheme().equals("file")) {
+            state = State.RELATIVE;
+            shouldAdvance = false;
+          } else {
+            state = State.FILE;
+            shouldAdvance = false;
+          }
+        }
       }
 
       if (shouldAdvance) {
@@ -106,7 +129,7 @@ final class UrlParser {
       }
     }
 
-    return new Success(new Url(scheme));
+    return new Success(new Url(scheme, path, query, fragment));
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {
