@@ -192,6 +192,16 @@ final class UrlParser {
             pointer.decrease();
           }
         }
+        case SPECIAL_AUTHORITY_SLASHES -> {
+          if (pointer.getCurrentCodePoint() == '/' && pointer.doesRemainingStartWith("/")) {
+            state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
+            pointer.increase();
+          } else {
+            errors.add(new SpecialSchemeMissingFollowingSolidus());
+            state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
+            pointer.decrease();
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
