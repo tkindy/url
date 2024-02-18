@@ -47,7 +47,7 @@ final class UrlParser {
         case SCHEME_START -> {
           int c = pointer.getCurrentCodePoint();
           if (isAsciiAlpha(c)) {
-            buffer.appendCodePoint(c);
+            buffer.appendCodePoint(Character.toLowerCase(c));
             state = State.SCHEME;
           } else {
             state = State.NO_SCHEME;
