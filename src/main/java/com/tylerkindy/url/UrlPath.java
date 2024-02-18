@@ -16,7 +16,9 @@
 
 package com.tylerkindy.url;
 
-public sealed interface ValidationError {
-  record InvalidUrlUnit(String message) implements ValidationError {}
-  record SpecialSchemeMissingFollowingSolidus() implements ValidationError {}
+import java.util.List;
+
+public sealed interface UrlPath {
+  record Opaque(String segment) implements UrlPath {}
+  record NonOpaque(List<String> segments) implements UrlPath {}
 }

@@ -86,4 +86,13 @@ class PointerTest {
     assertThat(new Pointer("abc").doesRemainingStartWith("bcd"))
         .isFalse();
   }
+
+  @Test
+  void itResets() {
+    Pointer p = new Pointer("abc");
+    p.advance();
+    p.reset();
+
+    assertThat(p.getCurrentCodePoint()).isEqualTo('a');
+  }
 }

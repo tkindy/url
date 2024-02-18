@@ -85,4 +85,9 @@ final class Pointer {
 
     return true;
   }
+
+  public void reset() {
+    codePointIndex = 0;
+    codeUnitIndex = 0;
+  }
 }

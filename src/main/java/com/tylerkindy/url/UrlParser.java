@@ -16,14 +16,23 @@
 
 package com.tylerkindy.url;
 
+import static java.util.function.Predicate.isEqual;
+
 import com.tylerkindy.url.UrlParseResult.Success;
+import com.tylerkindy.url.UrlPath.NonOpaque;
+import com.tylerkindy.url.UrlPath.Opaque;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
+import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 final class UrlParser {
   public static final UrlParser INSTANCE = new UrlParser();
+
+  private static final Set<String> SPECIAL_SCHEMES =
+      Set.of("ftp", "file", "http", "https", "ws", "wss");
 
   private UrlParser() {
   }
@@ -41,6 +50,7 @@ final class UrlParser {
     Pointer pointer = new Pointer(urlStr);
 
     String scheme = "";
+    UrlPath path = new NonOpaque(List.of());
 
     boolean shouldAdvance;
     stateLoop: while (!pointer.isEof()) {
@@ -64,7 +74,29 @@ final class UrlParser {
           } else if (c == ':') {
             scheme = buffer.toString();
             buffer = new StringBuilder();
-            break stateLoop; // TODO: implement the rest
+
+            if (scheme.equals("file")) {
+              if (!pointer.doesRemainingStartWith("//")) {
+                errors.add(new SpecialSchemeMissingFollowingSolidus());
+              }
+              state = State.FILE;
+            } else if (SPECIAL_SCHEMES.contains(scheme)
+                && base.map(Url::scheme).filter(isEqual(scheme)).isPresent()) {
+              state = State.SPECIAL_RELATIVE_OR_AUTHORITY;
+            } else if (SPECIAL_SCHEMES.contains(scheme)) {
+              state = State.SPECIAL_AUTHORITY_SLASHES;
+            } else if (pointer.doesRemainingStartWith("/")) {
+              state = State.PATH_OR_AUTHORITY;
+              pointer.advance();
+            } else {
+              path = new Opaque("");
+              state = State.OPAQUE_PATH;
+            }
+          } else {
+            buffer = new StringBuilder();
+            state = State.NO_SCHEME;
+            pointer.reset();
+            shouldAdvance = false;
           }
         }
       }

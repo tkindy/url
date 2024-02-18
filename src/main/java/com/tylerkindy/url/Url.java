@@ -46,6 +46,10 @@ public final class Url {
     this.scheme = scheme;
   }
 
+  public String scheme() {
+    return scheme;
+  }
+
   @Override
   public boolean equals(Object o) {
     return this == o || o instanceof Url u && Objects.equals(scheme, u.scheme);
