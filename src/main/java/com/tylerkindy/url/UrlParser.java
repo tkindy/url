@@ -34,8 +34,7 @@ final class UrlParser {
   private static final Set<String> SPECIAL_SCHEMES =
       Set.of("ftp", "file", "http", "https", "ws", "wss");
 
-  private UrlParser() {
-  }
+  private UrlParser() {}
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public UrlParseResult parse(String urlStr, Optional<Url> base) {
@@ -53,7 +52,8 @@ final class UrlParser {
     UrlPath path = new NonOpaque(List.of());
 
     boolean shouldAdvance;
-    stateLoop: while (!pointer.isEof()) {
+    stateLoop:
+    while (!pointer.isEof()) {
       shouldAdvance = true;
 
       switch (state) {
