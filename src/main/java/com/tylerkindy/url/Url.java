@@ -25,6 +25,10 @@ public final class Url {
     return new Url(url);
   }
 
+  public static Url parse(String url, Url base) {
+    return new Url(url);
+  }
+
   // Visible for testing
   Url(String url) {
     this.url = url;
