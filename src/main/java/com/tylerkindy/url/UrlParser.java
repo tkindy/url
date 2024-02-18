@@ -122,6 +122,16 @@ final class UrlParser {
             shouldAdvance = false;
           }
         }
+        case SPECIAL_RELATIVE_OR_AUTHORITY -> {
+          if (pointer.getCurrentCodePoint() == '/' && pointer.doesRemainingStartWith("/")) {
+            state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
+            pointer.advance();
+          } else {
+            errors.add(new SpecialSchemeMissingFollowingSolidus());
+            state = State.RELATIVE;
+            shouldAdvance = false;
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
