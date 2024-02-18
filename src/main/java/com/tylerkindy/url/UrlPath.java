@@ -27,6 +27,22 @@ public sealed interface UrlPath {
     };
   }
 
-  record Opaque(String segment) implements UrlPath {}
-  record NonOpaque(List<String> segments) implements UrlPath {}
+  record Opaque(String segment) implements UrlPath {
+    @Override
+    public String toString() {
+      return segment;
+    }
+  }
+  record NonOpaque(List<String> segments) implements UrlPath {
+    @Override
+    public String toString() {
+      StringBuilder output = new StringBuilder();
+
+      for (String segment : segments) {
+        output.append('/').append(segment);
+      }
+
+      return output.toString();
+    }
+  }
 }

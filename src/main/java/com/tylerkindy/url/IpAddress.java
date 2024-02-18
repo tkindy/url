@@ -19,6 +19,16 @@ package com.tylerkindy.url;
 import java.util.List;
 
 public sealed interface IpAddress {
-  record Ipv4Address(int address) implements IpAddress {}
-  record Ipv6Address(List<Character> pieces) implements IpAddress {}
+  record Ipv4Address(int address) implements IpAddress {
+    @Override
+    public String toString() {
+      return "192.168.1.1"; // TODO
+    }
+  }
+  record Ipv6Address(List<Character> pieces) implements IpAddress {
+    @Override
+    public String toString() {
+      return "::1"; // TODO
+    }
+  }
 }

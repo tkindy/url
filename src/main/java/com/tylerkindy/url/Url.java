@@ -19,6 +19,8 @@ package com.tylerkindy.url;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlParseResult.SuccessWithErrors;
+import com.tylerkindy.url.UrlPath.NonOpaque;
+import com.tylerkindy.url.UrlPath.Opaque;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -113,6 +115,32 @@ public final class Url {
 
   @Override
   public String toString() {
-    return scheme + ":";
+    StringBuilder output = new StringBuilder(scheme).append(":");
+
+    host().ifPresent(host -> {
+      output.append("//");
+      if (!username.isEmpty() || !password.isEmpty()) {
+        output.append(username);
+        if (!password.isEmpty()) {
+          output.append(":").append(password);
+        }
+        output.append("@");
+      }
+      output.append(host);
+      port().ifPresent(port -> output.append(":").append(Integer.toString(port)));
+    });
+
+    if (host().isEmpty() && path instanceof NonOpaque p && p.segments().size() > 1 && p.segments().getFirst().isEmpty()) {
+      output.append("/.");
+    }
+
+    output.append(path);
+
+    query().ifPresent(query -> output.append('?').append(query));
+
+    // TODO: allow excluding fragment as per spec?
+    fragment().ifPresent(fragment -> output.append('#').append(fragment));
+
+    return output.toString();
   }
 }

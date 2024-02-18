@@ -17,8 +17,28 @@
 package com.tylerkindy.url;
 
 public sealed interface Host {
-  record Domain(String domain) implements Host {}
-  record IpAddress(com.tylerkindy.url.IpAddress address) implements Host {}
-  record Opaque(String host) implements Host {}
-  record Empty() implements Host {}
+  record Domain(String domain) implements Host {
+    @Override
+    public String toString() {
+      return domain;
+    }
+  }
+  record IpAddress(com.tylerkindy.url.IpAddress address) implements Host {
+    @Override
+    public String toString() {
+      return address.toString();
+    }
+  }
+  record Opaque(String host) implements Host {
+    @Override
+    public String toString() {
+      return host;
+    }
+  }
+  record Empty() implements Host {
+    @Override
+    public String toString() {
+      return "";
+    }
+  }
 }
