@@ -20,12 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
-import com.tylerkindy.url.testdata.TestCase;
 import com.tylerkindy.url.testdata.TestCase.Failure;
 import com.tylerkindy.url.testdata.TestCase.Success;
 import com.tylerkindy.url.testdata.TestCaseReader;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
@@ -39,30 +37,13 @@ class UrlTest {
 
   @TestFactory
   Stream<DynamicTest> urlTestDataTests() {
-    Function<TestCase, StringBuilder> testDescriptor = (testCase) -> {
-      StringBuilder sb = new StringBuilder()
-          .append('\'')
-          .append(testCase.input())
-          .append("'");
-
-      testCase.base().ifPresent(base -> {
-        sb.append(" with base '")
-            .append(base)
-            .append('\'');
-      });
-
-      return sb;
-    };
-
     return TestCaseReader.testCases()
         .map(
             testCase -> {
               switch (testCase) {
                 case Success success -> {
                   return dynamicTest(
-                      testDescriptor.apply(testCase)
-                          .append(" successfully parses")
-                          .toString(),
+                      success.name(),
                       () -> {
                         Url parsed =
                             success
@@ -74,9 +55,7 @@ class UrlTest {
                 }
                 case Failure failure -> {
                   return dynamicTest(
-                      testDescriptor.apply(failure)
-                          .append(" fails to parse")
-                          .toString(),
+                      failure.name(),
                       () -> {
                         Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
                         assertThatExceptionOfType(RuntimeException.class)

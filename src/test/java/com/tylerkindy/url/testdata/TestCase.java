@@ -29,8 +29,27 @@ import java.util.Optional;
 @JsonSubTypes({@Type(Success.class), @Type(Failure.class)})
 public sealed interface TestCase {
   String input();
-
   Optional<String> base();
+
+  default String name() {
+    StringBuilder sb = new StringBuilder()
+        .append('\'')
+        .append(input())
+        .append("'");
+
+    base().ifPresent(base -> {
+      sb.append(" with base '")
+          .append(base)
+          .append('\'');
+    });
+
+    switch (this) {
+      case Success s -> sb.append(" successfully parses");
+      case Failure f -> sb.append(" fails to parse");
+    }
+
+    return sb.toString();
+  }
 
   record Success(
       String input,
