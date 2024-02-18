@@ -16,18 +16,30 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.UrlParseResult.Failure;
+import com.tylerkindy.url.UrlParseResult.Success;
+import com.tylerkindy.url.UrlParseResult.SuccessWithErrors;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public final class Url {
   private final String scheme;
 
-  public static Url parse(String url) {
-    return UrlParser.parse(url, Optional.empty());
+  public static Url parseOrThrow(String url) {
+    return extractOrThrow(url, UrlParser.parse(url, Optional.empty()));
   }
 
-  public static Url parse(String url, Url base) {
-    return UrlParser.parse(url, Optional.of(base));
+  public static Url parseOrThrow(String url, Url base) {
+    return extractOrThrow(url, UrlParser.parse(url, Optional.of(base)));
+  }
+
+  private static Url extractOrThrow(String urlStr, UrlParseResult result) {
+    return switch (result) {
+      case Success(Url url) -> url;
+      case SuccessWithErrors(Url url, var errors) -> url;
+      case Failure(List<ValidationError> errors) -> throw new ValidationException(urlStr, errors);
+    };
   }
 
   Url(String scheme) {

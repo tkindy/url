@@ -16,16 +16,17 @@
 
 package com.tylerkindy.url;
 
-import com.tylerkindy.url.UrlParseResult.Success;
-import java.util.Optional;
+import java.util.List;
 
-final class UrlParser {
-  private UrlParser() {
-    throw new RuntimeException();
+public class ValidationException extends RuntimeException {
+  private final List<ValidationError> errors;
+
+  public ValidationException(String urlStr, List<ValidationError> errors) {
+    super("Error validating URL '" + urlStr + "': " + errors);
+    this.errors = errors;
   }
 
-  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public static UrlParseResult parse(String url, Optional<Url> base) {
-    return new Success(new Url("http"));
+  public List<ValidationError> getErrors() {
+    return errors;
   }
 }

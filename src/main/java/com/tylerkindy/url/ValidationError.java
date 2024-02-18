@@ -16,16 +16,6 @@
 
 package com.tylerkindy.url;
 
-import com.tylerkindy.url.UrlParseResult.Success;
-import java.util.Optional;
-
-final class UrlParser {
-  private UrlParser() {
-    throw new RuntimeException();
-  }
-
-  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  public static UrlParseResult parse(String url, Optional<Url> base) {
-    return new Success(new Url("http"));
-  }
+public sealed interface ValidationError {
+  record InvalidUrlUnit() implements ValidationError {}
 }

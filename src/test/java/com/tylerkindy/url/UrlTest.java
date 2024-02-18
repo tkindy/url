@@ -32,7 +32,7 @@ import org.junit.jupiter.api.TestFactory;
 class UrlTest {
   @Test
   void itParsesUrls() {
-    assertThat(Url.parse("https://example.com/foo").toString()).isEqualTo("https://example.com/foo");
+    assertThat(Url.parseOrThrow("https://example.com/foo").toString()).isEqualTo("https://example.com/foo");
   }
 
   @TestFactory
@@ -48,8 +48,8 @@ class UrlTest {
                         Url parsed =
                             success
                                 .base()
-                                .map(base -> Url.parse(success.input(), Url.parse(base)))
-                                .orElseGet(() -> Url.parse(success.input()));
+                                .map(base -> Url.parseOrThrow(success.input(), Url.parseOrThrow(base)))
+                                .orElseGet(() -> Url.parseOrThrow(success.input()));
                         assertThat(parsed.toString()).isEqualTo(success.href());
                       });
                 }
@@ -57,13 +57,13 @@ class UrlTest {
                   return dynamicTest(
                       "'" + failure.input() + "' fails to parse",
                       () -> {
-                        Optional<Url> maybeBase = failure.base().map(Url::parse);
+                        Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
                         assertThatExceptionOfType(RuntimeException.class)
                             .isThrownBy(
                                 () ->
                                     maybeBase
-                                        .map(base -> Url.parse(failure.input(), base))
-                                        .orElseGet(() -> Url.parse(failure.input())));
+                                        .map(base -> Url.parseOrThrow(failure.input(), base))
+                                        .orElseGet(() -> Url.parseOrThrow(failure.input())));
                       });
                 }
               }
