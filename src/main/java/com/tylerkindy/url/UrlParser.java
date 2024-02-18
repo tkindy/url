@@ -44,7 +44,10 @@ final class UrlParser {
     boolean passwordTokenSeen = false;
     Pointer pointer = new Pointer(urlStr);
 
+    boolean shouldAdvance;
     while (!pointer.isEof()) {
+      shouldAdvance = true;
+
       switch (state) {
         case SCHEME_START -> {
           int c = pointer.getCurrentCodePoint();
@@ -53,8 +56,13 @@ final class UrlParser {
             state = State.SCHEME;
           } else {
             state = State.NO_SCHEME;
+            shouldAdvance = false;
           }
         }
+      }
+
+      if (shouldAdvance) {
+        pointer.advance();
       }
     }
   }
