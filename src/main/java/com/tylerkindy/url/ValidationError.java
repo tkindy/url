@@ -23,4 +23,5 @@ public sealed interface ValidationError {
   record InvalidReverseSolidus() implements ValidationError {}
   record InvalidCredentials() implements ValidationError {}
   record HostMissing() implements ValidationError {}
+  record Ipv6Unclosed() implements ValidationError {}
 }

@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.IpAddress.Ipv6Address;
+import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,11 +26,31 @@ final class HostParser {
     throw new RuntimeException();
   }
 
-  public static Optional<Host> parseHost(String host, List<ValidationError> errors) {
-    return parseHost(host, false, errors);
+  public static Optional<Host> parseHost(String input, List<ValidationError> errors) {
+    return parseHost(input, false, errors);
   }
 
-  public static Optional<Host> parseHost(String host, boolean isOpaque, List<ValidationError> errors) {
+  public static Optional<Host> parseHost(String input, boolean isOpaque, List<ValidationError> errors) {
+    if (!input.isEmpty() && input.charAt(0) == '[') {
+      if (input.charAt(input.length() - 1) != ']') {
+        errors.add(new Ipv6Unclosed());
+        return Optional.empty();
+      }
+      return parseIpv6(input.substring(1, input.length() - 1), errors)
+          .map(Host.IpAddress::new);
+    }
+    if (isOpaque) {
+      return parseOpaque(input, errors)
+          .map(Host.Opaque::new);
+    }
+    return Optional.empty(); // TODO
+  }
+
+  private static Optional<Ipv6Address> parseIpv6(String input, List<ValidationError> errors) {
+    return Optional.empty(); // TODO
+  }
+
+  private static Optional<String> parseOpaque(String input, List<ValidationError> errors) {
     return Optional.empty(); // TODO
   }
 }
