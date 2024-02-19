@@ -28,6 +28,7 @@ import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -247,6 +248,45 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.HOST;
           } else {
+            buffer.appendCodePoint(pointer.getCurrentCodePoint());
+          }
+        }
+        case HOST, HOSTNAME -> {
+          if (pointer.getCurrentCodePoint() == ':' && !insideBrackets) {
+            if (buffer.isEmpty()) {
+              errors.add(new HostMissing());
+              return new Failure(errors);
+            }
+            Optional<Host> maybeHost = HostParser.parseHost(buffer.toString(), !SPECIAL_SCHEMES.contains(scheme), errors);
+            if (maybeHost.isEmpty()) {
+              return new Failure(errors);
+            }
+            host = maybeHost.get();
+            buffer.delete(0, buffer.length());
+            state = State.PORT;
+          } else if (
+              (pointer.isEof() || pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#') ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+          ) {
+            pointer.decrease();
+            if (SPECIAL_SCHEMES.contains(scheme) && buffer.isEmpty()) {
+              errors.add(new HostMissing());
+              return new Failure(errors);
+            }
+            Optional<Host> maybeHost = HostParser.parseHost(buffer.toString(), !SPECIAL_SCHEMES.contains(scheme), errors);
+            if (maybeHost.isEmpty()) {
+              return new Failure(errors);
+            }
+            host = maybeHost.get();
+            buffer.delete(0, buffer.length());
+            state = State.PATH_START;
+          } else {
+            if (pointer.getCurrentCodePoint() == '[') {
+              insideBrackets = true;
+            }
+            if (pointer.getCurrentCodePoint() == ']') {
+              insideBrackets = false;
+            }
             buffer.appendCodePoint(pointer.getCurrentCodePoint());
           }
         }
