@@ -22,6 +22,7 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
+import com.tylerkindy.url.ValidationError.HostMissing;
 import com.tylerkindy.url.ValidationError.InvalidCredentials;
 import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
@@ -53,8 +54,8 @@ final class UrlParser {
     Pointer pointer = new Pointer(urlStr);
 
     String scheme = "";
-    String username = "";
-    String password = "";
+    StringBuilder username = new StringBuilder();
+    StringBuilder password = new StringBuilder();
     Host host = null;
     Character port = null;
     UrlPath path = new NonOpaque(List.of());
@@ -62,7 +63,7 @@ final class UrlParser {
     String fragment = null;
 
     stateLoop:
-    while (!pointer.isEof()) {
+    while (true) {
       switch (state) {
         case SCHEME_START -> {
           int c = pointer.getCurrentCodePoint();
@@ -151,8 +152,8 @@ final class UrlParser {
             errors.add(new InvalidReverseSolidus());
             state = State.RELATIVE_SLASH;
           } else {
-            username = base.get().username();
-            password = base.get().password();
+            username = new StringBuilder(base.get().username());
+            password = new StringBuilder(base.get().password());
             host = base.get().host().orElse(null);
             port = base.get().port().orElse(null);
             path = base.get().path().copy();
@@ -185,8 +186,8 @@ final class UrlParser {
           } else if (pointer.getCurrentCodePoint() == '/') {
             state = State.AUTHORITY;
           } else {
-            username = base.get().username();
-            password = base.get().password();
+            username = new StringBuilder(base.get().username());
+            password = new StringBuilder(base.get().password());
             host = base.get().host().orElse(null);
             port = base.get().port().orElse(null);
             state = State.PATH;
@@ -224,21 +225,44 @@ final class UrlParser {
                 passwordTokenSeen = true;
                 continue;
               }
-              // TODO
+
+              String encodedCodePoints = PercentEncoder.utf8PecentEncode(codePoint, PercentEncoder.USERINFO);
+              if (passwordTokenSeen) {
+                password.append(encodedCodePoints);
+              } else {
+                username.append(encodedCodePoints);
+              }
             }
-            // TODO
+
+            buffer.delete(0, buffer.length());
+          } else if (
+              (pointer.isEof() || pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#') ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+          ) {
+            if (atSignSeen && buffer.isEmpty()) {
+              errors.add(new HostMissing());
+              return new Failure(errors);
+            }
+            pointer.decrease(buffer.codePointCount(0, buffer.length()) + 1);
+            buffer.delete(0, buffer.length());
+            state = State.HOST;
+          } else {
+            buffer.appendCodePoint(pointer.getCurrentCodePoint());
           }
-          // TODO
         }
         default -> {
           break stateLoop; // TODO: remove
         }
       }
 
-      pointer.increase();
+      if (pointer.isEof()) {
+        break;
+      } else {
+        pointer.increase();
+      }
     }
 
-    return new Success(new Url(scheme, username, password, host, port, path, query, fragment));
+    return new Success(new Url(scheme, username.toString(), password.toString(), host, port, path, query, fragment));
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {

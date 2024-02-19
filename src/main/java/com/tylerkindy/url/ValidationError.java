@@ -22,4 +22,5 @@ public sealed interface ValidationError {
   record MissingSchemeNonRelativeUrl() implements ValidationError {}
   record InvalidReverseSolidus() implements ValidationError {}
   record InvalidCredentials() implements ValidationError {}
+  record HostMissing() implements ValidationError {}
 }

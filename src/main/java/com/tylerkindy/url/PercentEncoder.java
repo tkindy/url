@@ -19,6 +19,7 @@ package com.tylerkindy.url;
 import com.google.common.collect.Range;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 final class PercentEncoder {
   public static final PercentEncodeSet C0_CONTROL = PercentEncodeSet.builder()
@@ -53,6 +54,14 @@ final class PercentEncoder {
 
   private PercentEncoder() {
     throw new RuntimeException();
+  }
+
+  public static String utf8PecentEncode(int codePoint, PercentEncodeSet percentEncodeSet) {
+    return percentEncodeAfterEncoding(
+        StandardCharsets.UTF_8,
+        Character.toString(codePoint),
+        percentEncodeSet
+    );
   }
 
   public static String percentEncodeAfterEncoding(Charset encoding, String input, PercentEncodeSet percentEncodeSet) {
