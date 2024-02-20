@@ -352,7 +352,7 @@ final class UrlParser {
   }
 
   private boolean isAsciiTabOrNewline(int c) {
-    return c == '\t' || c == '\f' || c == '\r';
+    return c == '\t' || c == '\f' || c == '\r' || c == '\n';
   }
 
   private boolean isAsciiAlpha(int codePoint) {
