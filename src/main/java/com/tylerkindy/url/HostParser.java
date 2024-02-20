@@ -16,6 +16,7 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
 import java.util.List;
@@ -43,7 +44,9 @@ final class HostParser {
       return parseOpaque(input, errors)
           .map(Host.Opaque::new);
     }
-    return Optional.empty(); // TODO
+    String domain = PercentEncoder.percentDecode(input);
+    // TODO: domain to ASCII
+    return Optional.of(new Domain(domain));
   }
 
   private static Optional<Ipv6Address> parseIpv6(String input, List<ValidationError> errors) {
