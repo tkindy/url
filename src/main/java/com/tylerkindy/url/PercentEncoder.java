@@ -90,4 +90,43 @@ final class PercentEncoder {
 
     return output.toString();
   }
+
+  public static String percentDecode(String input) {
+    Charset charset = StandardCharsets.UTF_8;
+    return charset.decode(percentDecode(charset.encode(input))).toString();
+  }
+
+  private static ByteBuffer percentDecode(ByteBuffer bytes) {
+    ByteBuffer output = ByteBuffer.allocate(bytes.capacity());
+    while (bytes.hasRemaining()) {
+      byte b = bytes.get();
+      if (b != 0x25) {
+        output.put(b);
+      } else {
+        bytes.mark();
+        byte nextByte1 = bytes.get();
+        byte nextByte2 = bytes.get();
+        if (!(isUtf8HexDigit(nextByte1) && isUtf8HexDigit(nextByte2))) {
+          output.put(b);
+          bytes.reset();
+        } else {
+          byte bytePoint = Byte.parseByte(
+              StandardCharsets.UTF_8.decode(
+                  ByteBuffer.wrap(new byte[]{nextByte1, nextByte2})
+                  )
+                  .toString(),
+              16
+          );
+          output.put(bytePoint);
+        }
+      }
+    }
+    return output;
+  }
+
+  private static boolean isUtf8HexDigit(byte b) {
+    return (b >= 0x30 && b <= 0x39) ||
+        (b >= 0x41 && b <= 0x46) ||
+        (b >= 0x61 && b <= 0x66);
+  }
 }
