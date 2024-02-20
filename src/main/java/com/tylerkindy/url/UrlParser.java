@@ -214,7 +214,7 @@ final class UrlParser {
           }
         }
         case AUTHORITY -> {
-          if (pointer.getCurrentCodePoint() == '@') {
+          if (!pointer.isEof() && pointer.getCurrentCodePoint() == '@') {
             errors.add(new InvalidCredentials());
             if (atSignSeen) {
               buffer.insert(0, "%40");
@@ -252,7 +252,7 @@ final class UrlParser {
           }
         }
         case HOST, HOSTNAME -> {
-          if (pointer.getCurrentCodePoint() == ':' && !insideBrackets) {
+          if (!pointer.isEof() && pointer.getCurrentCodePoint() == ':' && !insideBrackets) {
             if (buffer.isEmpty()) {
               errors.add(new HostMissing());
               return new Failure(errors);
