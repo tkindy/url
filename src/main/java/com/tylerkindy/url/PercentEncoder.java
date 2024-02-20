@@ -98,16 +98,19 @@ final class PercentEncoder {
 
   private static ByteBuffer percentDecode(ByteBuffer bytes) {
     ByteBuffer output = ByteBuffer.allocate(bytes.capacity());
+    int outputBytes = 0;
     while (bytes.hasRemaining()) {
       byte b = bytes.get();
       if (b != 0x25) {
         output.put(b);
+        outputBytes++;
       } else {
         bytes.mark();
         byte nextByte1 = bytes.get();
         byte nextByte2 = bytes.get();
         if (!(isUtf8HexDigit(nextByte1) && isUtf8HexDigit(nextByte2))) {
           output.put(b);
+          outputBytes++;
           bytes.reset();
         } else {
           byte bytePoint = Byte.parseByte(
@@ -118,10 +121,11 @@ final class PercentEncoder {
               16
           );
           output.put(bytePoint);
+          outputBytes++;
         }
       }
     }
-    return output;
+    return output.rewind().limit(outputBytes);
   }
 
   private static boolean isUtf8HexDigit(byte b) {

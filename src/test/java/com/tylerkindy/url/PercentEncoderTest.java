@@ -29,4 +29,9 @@ class PercentEncoderTest {
                 StandardCharsets.UTF_8, "ab#cd", PercentEncoder.USERINFO))
         .isEqualTo("ab%23cd");
   }
+
+  @Test
+  void itDecodes() {
+    assertThat(PercentEncoder.percentDecode("ab%20cd")).isEqualTo("ab cd");
+  }
 }
