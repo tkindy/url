@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.Pointer.PrefixPattern.AsciiDigit;
+import com.tylerkindy.url.Pointer.PrefixPattern.Literal;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 
@@ -98,8 +100,13 @@ final class Pointer {
   }
 
   public boolean doesRemainingStartWith(String prefix) {
+    long prefixLength = prefix
+        .chars()
+        .filter(c -> c != '%')
+        .count();
+
     int remainingLength = s.length() - codeUnitIndex - 1;
-    if (remainingLength < prefix.length()) {
+    if (remainingLength < prefixLength) {
       return false;
     }
 
@@ -107,7 +114,18 @@ final class Pointer {
       char sChar = s.charAt(codeUnitIndex + i + 1);
       char prefixChar = prefix.charAt(i);
 
-      if (sChar != prefixChar) {
+      final PrefixPattern prefixPattern;
+      if (prefixChar == '%') {
+        char patternChar = prefix.charAt(i + 1);
+        prefixPattern = switch (patternChar) {
+          case 'd' -> new AsciiDigit();
+          default -> throw new IllegalArgumentException("Unexpected prefix pattern char: " + patternChar);
+        };
+      } else {
+        prefixPattern = new Literal(prefixChar);
+      }
+
+      if (!prefixPattern.matches(sChar)) {
         return false;
       }
     }
@@ -123,5 +141,17 @@ final class Pointer {
   @FunctionalInterface
   private interface IndexUpdater {
     int update(int index, int amount);
+  }
+
+  sealed interface PrefixPattern {
+    default boolean matches(char c) {
+      return switch (this) {
+        case AsciiDigit ad -> c >= '0' && c <= '9';
+        case Literal(var l) -> c == l;
+      };
+    }
+
+    record AsciiDigit() implements PrefixPattern {}
+    record Literal(char c) implements PrefixPattern {}
   }
 }
