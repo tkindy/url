@@ -18,6 +18,7 @@ package com.tylerkindy.url;
 
 import static java.util.function.Predicate.isEqual;
 
+import com.google.common.collect.ImmutableMap;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -27,10 +28,12 @@ import com.tylerkindy.url.ValidationError.InvalidCredentials;
 import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
+import com.tylerkindy.url.ValidationError.PortInvalid;
+import com.tylerkindy.url.ValidationError.PortOutOfRange;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
-import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,6 +42,13 @@ final class UrlParser {
 
   private static final Set<String> SPECIAL_SCHEMES =
       Set.of("ftp", "file", "http", "https", "ws", "wss");
+  private static final Map<String, Character> DEFAULT_PORTS = ImmutableMap.<String, Character>builder()
+      .put("ftp", (char) 21)
+      .put("http", (char) 80)
+      .put("https", (char) 443)
+      .put("ws", (char) 80)
+      .put("wss", (char) 443)
+      .build();
 
   private UrlParser() {}
 
@@ -288,6 +298,44 @@ final class UrlParser {
               insideBrackets = false;
             }
             buffer.appendCodePoint(pointer.getCurrentCodePoint());
+          }
+        }
+        case PORT -> {
+          if (!pointer.isEof() && pointer.getCurrentCodePoint() >= '0'
+              && pointer.getCurrentCodePoint() <= '9') {
+            buffer.appendCodePoint(pointer.getCurrentCodePoint());
+          } else if (
+              (
+                  pointer.isEof() ||
+                      pointer.getCurrentCodePoint() == '/' ||
+                      pointer.getCurrentCodePoint() == '?' ||
+                      pointer.getCurrentCodePoint() == '#'
+              ) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+          ) {
+            if (!buffer.isEmpty()) {
+              int portInt = Integer.parseInt(buffer.toString());
+              if (portInt > Character.MAX_VALUE) {
+                errors.add(new PortOutOfRange());
+                return new Failure(errors);
+              }
+
+              char portChar = (char) portInt;
+
+              if (portChar == DEFAULT_PORTS.get(scheme)) {
+                port = null;
+              } else {
+                port = portChar;
+              }
+
+              buffer.delete(0, buffer.length());
+            }
+
+            state = State.PATH_START;
+            pointer.decrease();
+          } else {
+            errors.add(new PortInvalid());
+            return new Failure(errors);
           }
         }
         default -> {

@@ -24,4 +24,6 @@ public sealed interface ValidationError {
   record InvalidCredentials() implements ValidationError {}
   record HostMissing() implements ValidationError {}
   record Ipv6Unclosed() implements ValidationError {}
+  record PortOutOfRange() implements ValidationError {}
+  record PortInvalid() implements ValidationError {}
 }
