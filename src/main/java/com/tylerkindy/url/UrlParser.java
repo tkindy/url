@@ -378,6 +378,15 @@ final class UrlParser {
             return new Failure(errors);
           }
         }
+        case FILE -> {
+          throw new IllegalStateException("FILE not yet implemented");
+        }
+        case FILE_SLASH -> {
+          throw new IllegalStateException("FILE_SLASH not yet implemented");
+        }
+        case FILE_HOST -> {
+          throw new IllegalStateException("FILE_HOST not yet implemented");
+        }
         case PATH_START -> {
           if (SPECIAL_SCHEMES.contains(scheme)) {
             if (pointer.pointedAt() instanceof CodePoint(var c) && c == '\\') {
@@ -551,9 +560,6 @@ final class UrlParser {
             case Eof() -> {}
             case Nowhere() -> {}
           }
-        }
-        default -> {
-          break stateLoop; // TODO: remove
         }
       }
 
