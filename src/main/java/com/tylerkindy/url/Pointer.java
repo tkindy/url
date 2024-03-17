@@ -73,13 +73,23 @@ final class Pointer {
     } else {
       nextCodePoint = () -> s.codePointBefore(codeUnitIndex);
       indexUpdater = (index, amount) -> index - amount;
-      isAtEnd = p -> p.codePointIndex == 0;
+      isAtEnd = p -> p.codePointIndex == -1;
       numCodePoints *= -1;
     }
 
     for (int i = 0; i < numCodePoints; i++) {
       if (isAtEnd.test(this)) {
         return;
+      }
+      if (indexUpdater.update(codePointIndex, 1) == -1) {
+        codePointIndex = -1;
+        codeUnitIndex = -1;
+        continue;
+      }
+      if (indexUpdater.update(codePointIndex, 1) == 0) {
+        codePointIndex = 0;
+        codeUnitIndex = 0;
+        continue;
       }
 
       int codePoint = nextCodePoint.getAsInt();
