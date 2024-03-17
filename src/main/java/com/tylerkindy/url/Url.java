@@ -20,7 +20,6 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlParseResult.SuccessWithErrors;
 import com.tylerkindy.url.UrlPath.NonOpaque;
-import com.tylerkindy.url.UrlPath.Opaque;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,12 +34,20 @@ public final class Url {
   private final String query;
   private final String fragment;
 
+  public static UrlParseResult parse(String url) {
+    return UrlParser.INSTANCE.parse(url, Optional.empty());
+  }
+
   public static Url parseOrThrow(String url) {
-    return extractOrThrow(url, UrlParser.INSTANCE.parse(url, Optional.empty()));
+    return extractOrThrow(url, parse(url));
+  }
+
+  public static UrlParseResult parse(String url, Url base) {
+    return UrlParser.INSTANCE.parse(url, Optional.of(base));
   }
 
   public static Url parseOrThrow(String url, Url base) {
-    return extractOrThrow(url, UrlParser.INSTANCE.parse(url, Optional.of(base)));
+    return extractOrThrow(url, parse(url, base));
   }
 
   private static Url extractOrThrow(String urlStr, UrlParseResult result) {
