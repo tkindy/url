@@ -25,6 +25,7 @@ import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
+import com.tylerkindy.url.Host.Empty;
 import com.tylerkindy.url.Pointer.PointedAt;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
@@ -33,6 +34,7 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
+import com.tylerkindy.url.ValidationError.FileInvalidWindowsDriveLetter;
 import com.tylerkindy.url.ValidationError.HostMissing;
 import com.tylerkindy.url.ValidationError.InvalidCredentials;
 import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
@@ -384,7 +386,50 @@ final class UrlParser {
           }
         }
         case FILE -> {
-          throw new IllegalStateException("FILE not yet implemented");
+          scheme = "file";
+          host = new Empty();
+
+          if (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\')) {
+            if (c == '\\') {
+              errors.add(new InvalidReverseSolidus());
+            }
+            state = State.FILE_SLASH;
+          } else if (base.map(Url::scheme).filter(isEqual("file")).isPresent()) {
+            Url b = base.get();
+
+            host = b.host().orElse(null);
+            path = b.path().copy();
+            query = b.query().map(StringBuilder::new).orElse(null);
+
+            switch (pointer.pointedAt()) {
+              case CodePoint(var c) when c == '?' -> {
+                query = new StringBuilder();
+                state = State.QUERY;
+              }
+              case CodePoint(var c) when c == '#' -> {
+                fragment = new StringBuilder();
+                state = State.FRAGMENT;
+              }
+              case CodePoint(var c) -> {
+                query = null;
+
+                if (!pointer.doesRemainingStartWithWindowsDriveLetter()) {
+                  path = path.shorten();
+                } else {
+                  errors.add(new FileInvalidWindowsDriveLetter());
+                  path = new NonOpaque(List.of());
+                }
+
+                state = State.PATH;
+                pointer.decrease();
+              }
+              case Eof() -> {}
+              case Nowhere() -> {}
+            }
+          } else {
+            state = State.PATH;
+            pointer.decrease();
+          }
         }
         case FILE_SLASH -> {
           throw new IllegalStateException("FILE_SLASH not yet implemented");

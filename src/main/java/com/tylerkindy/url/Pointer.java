@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url;
 
+import static com.tylerkindy.url.CharacterUtils.isAsciiAlpha;
+
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
 import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
@@ -158,6 +160,31 @@ final class Pointer {
     }
 
     return true;
+  }
+
+  public boolean doesRemainingStartWithWindowsDriveLetter() {
+    int remainingLength = s.length() - codeUnitIndex - 1;
+    if (remainingLength < 2) {
+      return false;
+    }
+    if (!isAsciiAlpha(s.codePointAt(codeUnitIndex))) {
+      return false;
+    }
+
+    int secondCodePoint = s.codePointAt(codeUnitIndex + 1);
+    if (secondCodePoint != ':' && secondCodePoint != '|') {
+      return false;
+    }
+
+    if (remainingLength == 2) {
+      return true;
+    }
+
+    int thirdCodePoint = s.codePointAt(codeUnitIndex + 2);
+    return thirdCodePoint == '/' ||
+        thirdCodePoint == '\\' ||
+        thirdCodePoint == '?' ||
+        thirdCodePoint == '#';
   }
 
   public void reset() {
