@@ -85,7 +85,7 @@ final class UrlParser {
     Host host = null;
     Character port = null;
     UrlPath path = new NonOpaque(List.of());
-    String query = null;
+    StringBuilder query = null;
     String fragment = null;
 
     stateLoop:
@@ -141,7 +141,7 @@ final class UrlParser {
           } else if (base.get().path() instanceof Opaque) {
             scheme = base.get().scheme();
             path = base.get().path();
-            query = base.get().query().orElse(null);
+            query = base.get().query().map(StringBuilder::new).orElse(null);
             fragment = "";
             state = State.FRAGMENT;
           } else if (!base.get().scheme().equals("file")) {
@@ -183,10 +183,10 @@ final class UrlParser {
             host = base.get().host().orElse(null);
             port = base.get().port().orElse(null);
             path = base.get().path().copy();
-            query = base.get().query().orElse(null);
+            query = base.get().query().map(StringBuilder::new).orElse(null);
 
             if (pointer.getCurrentCodePoint() == '?') {
-              query = "";
+              query = new StringBuilder();
               state = State.QUERY;
             } else if (pointer.getCurrentCodePoint() == '#') {
               fragment = "";
@@ -364,7 +364,7 @@ final class UrlParser {
               pointer.decrease();
             }
           } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
-            query = "";
+            query = new StringBuilder();
             state = State.QUERY;
           } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
             fragment = "";
@@ -410,7 +410,7 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
 
             if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
-              query = "";
+              query = new StringBuilder();
               state = State.QUERY;
             }
             if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
@@ -435,6 +435,33 @@ final class UrlParser {
             );
           }
         }
+        case OPAQUE_PATH -> {
+          throw new IllegalStateException("TODO");
+        }
+        case QUERY -> {
+          if (pointer.isEof() || pointer.getCurrentCodePoint() == '#') {
+            CharacterSet queryPercentEncodeSet =
+                SPECIAL_SCHEMES.contains(scheme) ?
+                    PercentEncoder.SPECIAL_QUERY :
+                    PercentEncoder.QUERY;
+            query.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, buffer.toString(), queryPercentEncodeSet));
+            buffer.delete(0, buffer.length());
+
+            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
+              fragment = "";
+              state = State.FRAGMENT;
+            }
+          } else {
+            int c = pointer.getCurrentCodePoint();
+            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+              errors.add(new InvalidUrlUnit(Character.toString(c)));
+            }
+            if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+              errors.add(new InvalidUrlUnit("Unexpected %"));
+            }
+            buffer.appendCodePoint(c);
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
@@ -447,7 +474,7 @@ final class UrlParser {
       }
     }
 
-    return new Success(new Url(scheme, username.toString(), password.toString(), host, port, path, query, fragment));
+    return new Success(new Url(scheme, username.toString(), password.toString(), host, port, path, query == null ? null : query.toString(), fragment));
   }
 
   private String removeControlAndWhitespaceCharacters(String urlStr, List<ValidationError> errors) {

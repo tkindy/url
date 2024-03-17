@@ -34,6 +34,10 @@ final class PercentEncoder {
       .addCodePoint('<')
       .addCodePoint('>')
       .build();
+  public static final CharacterSet SPECIAL_QUERY = CharacterSet.builder()
+      .addAll(QUERY)
+      .addCodePoint('\'')
+      .build();
   public static final CharacterSet PATH = CharacterSet.builder()
       .addAll(QUERY)
       .addCodePoint('?')
