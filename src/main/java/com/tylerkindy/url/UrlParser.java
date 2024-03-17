@@ -16,6 +16,11 @@
 
 package com.tylerkindy.url;
 
+import static com.tylerkindy.url.CharacterUtils.isAsciiAlpha;
+import static com.tylerkindy.url.CharacterUtils.isAsciiAlphanumeric;
+import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
+import static com.tylerkindy.url.CharacterUtils.isAsciiTabOrNewline;
+import static com.tylerkindy.url.CharacterUtils.isC0ControlOrSpace;
 import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
@@ -626,38 +631,6 @@ final class UrlParser {
       errors.add(new InvalidUrlUnit("tab or newline"));
     }
     return sb.toString();
-  }
-
-  private boolean isC0ControlOrSpace(int codePoint) {
-    return isC0Control(codePoint) || codePoint == ' ';
-  }
-
-  private boolean isC0Control(int codePoint) {
-    return codePoint >= 0x0 && codePoint <= 0x1F;
-  }
-
-  private boolean isAsciiTabOrNewline(int c) {
-    return c == '\t' || c == '\f' || c == '\r' || c == '\n';
-  }
-
-  private boolean isAsciiAlpha(int codePoint) {
-    return isAsciiLowerAlpha(codePoint) || isAsciiUpperAlpha(codePoint);
-  }
-
-  private boolean isAsciiLowerAlpha(int codePoint) {
-    return codePoint >= 'a' && codePoint <= 'z';
-  }
-
-  private boolean isAsciiUpperAlpha(int codePoint) {
-    return codePoint >= 'A' && codePoint <= 'Z';
-  }
-
-  private boolean isAsciiAlphanumeric(int codePoint) {
-    return isAsciiAlpha(codePoint) || isAsciiDigit(codePoint);
-  }
-
-  private boolean isAsciiDigit(int codePoint) {
-    return codePoint >= '0' && codePoint <= '9';
   }
 
   private enum State {
