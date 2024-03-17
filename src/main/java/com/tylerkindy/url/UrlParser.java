@@ -438,7 +438,23 @@ final class UrlParser {
           }
         }
         case OPAQUE_PATH -> {
-          throw new IllegalStateException("TODO");
+          if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
+            query = new StringBuilder();
+            state = State.QUERY;
+          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
+            fragment = new StringBuilder();
+            state = State.FRAGMENT;
+          } else {
+            if (!pointer.isEof() && !URL_CODE_POINTS.contains(pointer.getCurrentCodePoint()) && pointer.getCurrentCodePoint() != '%') {
+              errors.add(new InvalidUrlUnit(Character.toString(pointer.getCurrentCodePoint())));
+            }
+            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+              errors.add(new InvalidUrlUnit("Unexpected %"));
+            }
+            if (!pointer.isEof()) {
+              path.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(pointer.getCurrentCodePoint()), PercentEncoder.C0_CONTROL));
+            }
+          }
         }
         case QUERY -> {
           if (pointer.isEof() || pointer.getCurrentCodePoint() == '#') {

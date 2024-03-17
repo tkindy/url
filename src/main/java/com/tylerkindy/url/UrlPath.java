@@ -37,7 +37,7 @@ public sealed interface UrlPath {
 
   default UrlPath append(String segment) {
     return switch (this) {
-      case Opaque o -> throw new AssertionError("Cannot append to an opaque path");
+      case Opaque(var s) -> new Opaque(s + segment);
       case NonOpaque(var segments) -> new NonOpaque(ImmutableList.<String>builder().addAll(segments).add(segment).build());
     };
   }
