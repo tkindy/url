@@ -27,6 +27,13 @@ public sealed interface UrlPath {
     };
   }
 
+  default UrlPath shorten() {
+    return switch (this) {
+      case Opaque o -> throw new AssertionError("Cannot shorten an opaque path");
+      case NonOpaque(var segments) -> segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
+    };
+  }
+
   record Opaque(String segment) implements UrlPath {
     @Override
     public String toString() {

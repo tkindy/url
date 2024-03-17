@@ -361,6 +361,32 @@ final class UrlParser {
             }
           }
         }
+        case PATH -> {
+          if ((pointer.isEof() || pointer.getCurrentCodePoint() == '/') ||
+              (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\') ||
+              (pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#')) {
+            if (SPECIAL_SCHEMES.contains(scheme) && !pointer.isEof() && pointer.getCurrentCodePoint() == '\\') {
+              errors.add(new InvalidReverseSolidus());
+            }
+
+            String curBuffer = buffer.toString();
+            if (curBuffer.equals("..") ||
+                curBuffer.equalsIgnoreCase(".%2e") ||
+                curBuffer.equalsIgnoreCase("%2e.") ||
+                curBuffer.equalsIgnoreCase("%2e%2e")) {
+              path = path.shorten();
+
+              if (pointer.getCurrentCodePoint() != '/' && !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')) {
+                // TODO: finish
+              }
+              // TODO: finish
+            }
+
+            // TODO: finish
+          }
+
+          // TODO: finish
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
