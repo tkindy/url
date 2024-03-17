@@ -573,20 +573,40 @@ final class UrlParser {
     }
 
     int prefixEndIndex = 0;
-    while (isC0ControlOrSpace(Character.codePointAt(urlStr, prefixEndIndex))) {
-      prefixEndIndex += 1;
+    while (prefixEndIndex < urlStr.length()) {
+      int codePoint = urlStr.codePointAt(prefixEndIndex);
+      if (!isC0ControlOrSpace(codePoint)) {
+        break;
+      }
+
+      if (codePoint <= 0xFFFF) {
+        prefixEndIndex += 1;
+      } else {
+        prefixEndIndex += 2;
+      }
     }
 
-    int suffixStartIndex = urlStr.length() - 1;
-    while (isC0ControlOrSpace(Character.codePointAt(urlStr, suffixStartIndex))) {
-      suffixStartIndex -= 1;
+    int suffixStartIndex = urlStr.length();
+    while (suffixStartIndex > 0) {
+      int codePoint = urlStr.codePointBefore(suffixStartIndex);
+      if (!isC0ControlOrSpace(codePoint)) {
+        break;
+      }
+
+      if (codePoint <= 0xFFFF) {
+        suffixStartIndex -= 1;
+      } else {
+        suffixStartIndex -= 2;
+      }
     }
 
     if (prefixEndIndex > 0 || suffixStartIndex < urlStr.length() - 1) {
       errors.add(new InvalidUrlUnit("leading or trailing C0 control or space"));
     }
 
-    urlStr = urlStr.substring(prefixEndIndex, suffixStartIndex + 1);
+    if (prefixEndIndex != urlStr.length()) {
+      urlStr = urlStr.substring(prefixEndIndex, suffixStartIndex);
+    }
 
     StringBuilder sb = new StringBuilder(urlStr.length());
     boolean hasTabOrNewline = false;
