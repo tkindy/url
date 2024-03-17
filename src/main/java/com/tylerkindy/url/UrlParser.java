@@ -20,6 +20,7 @@ import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
+import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -92,23 +93,23 @@ final class UrlParser {
     while (true) {
       switch (state) {
         case SCHEME_START -> {
-          if (!pointer.isEof()) {
-            int c = pointer.getCurrentCodePoint();
-            if (isAsciiAlpha(c)) {
+          switch (pointer.pointedAt()) {
+            case CodePoint(var c) when isAsciiAlpha(c) -> {
               buffer.appendCodePoint(Character.toLowerCase(c));
               state = State.SCHEME;
             }
-          } else {
-            state = State.NO_SCHEME;
-            pointer.decrease();
+            default -> {
+              state = State.NO_SCHEME;
+              pointer.decrease();
+            }
           }
         }
         case SCHEME -> {
-          if (!pointer.isEof()) {
-            int c = pointer.getCurrentCodePoint();
-            if (isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.') {
+          switch (pointer.pointedAt()) {
+            case CodePoint(var c) when isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.' -> {
               buffer.appendCodePoint(Character.toLowerCase(c));
-            } else if (c == ':') {
+            }
+            case CodePoint(var c) when c == ':' -> {
               scheme = buffer.toString();
               buffer.delete(0, buffer.length());
 
@@ -130,19 +131,20 @@ final class UrlParser {
                 state = State.OPAQUE_PATH;
               }
             }
-          } else {
-            buffer.delete(0, buffer.length());
-            state = State.NO_SCHEME;
-            pointer.reset();
-            pointer.decrease();
+            default -> {
+              buffer.delete(0, buffer.length());
+              state = State.NO_SCHEME;
+              pointer.reset();
+              pointer.decrease();
+            }
           }
         }
         case NO_SCHEME -> {
           if (base.isEmpty()
-              || (base.get().path() instanceof Opaque && pointer.getCurrentCodePoint() != '#')) {
+              || (base.get().path() instanceof Opaque && !(pointer.pointedAt() instanceof CodePoint(var c) && c == '#'))) {
             errors.add(new MissingSchemeNonRelativeUrl());
             return new Failure(errors);
-          } else if (base.get().path() instanceof Opaque) {
+          } else if (base.get().path() instanceof Opaque && pointer.pointedAt() instanceof CodePoint(var c) && c == '#') {
             scheme = base.get().scheme();
             path = base.get().path();
             query = base.get().query().map(StringBuilder::new).orElse(null);
@@ -157,7 +159,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_RELATIVE_OR_AUTHORITY -> {
-          if (pointer.getCurrentCodePoint() == '/' && pointer.doesRemainingStartWith("/")) {
+          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/' && pointer.doesRemainingStartWith("/")) {
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
             pointer.increase();
           } else {
@@ -167,7 +169,7 @@ final class UrlParser {
           }
         }
         case PATH_OR_AUTHORITY -> {
-          if (pointer.getCurrentCodePoint() == '/') {
+          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
             state = State.AUTHORITY;
           } else {
             state = State.PATH;
