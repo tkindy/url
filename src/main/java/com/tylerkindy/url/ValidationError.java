@@ -27,4 +27,5 @@ public sealed interface ValidationError {
   record PortOutOfRange() implements ValidationError {}
   record PortInvalid() implements ValidationError {}
   record FileInvalidWindowsDriveLetter() implements ValidationError {}
+  record FileInvalidWindowsDriveLetterHost() implements ValidationError {}
 }

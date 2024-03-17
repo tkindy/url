@@ -53,11 +53,16 @@ final class CharacterUtils {
     return c == '\t' || c == '\f' || c == '\r' || c == '\n';
   }
 
-  public static boolean isNormalizedWindowsDriveLetter(String s) {
+  public static boolean isWindowsDriveLetter(String s) {
     if (s.length() != 2 && s.codePointCount(0, 2) != 2) {
       return false;
     }
 
-    return isAsciiAlpha(s.codePointAt(0)) && s.codePointAt(1) == ':';
+    return isAsciiAlpha(s.codePointAt(0)) &&
+        (s.codePointAt(1) == ':' || s.codePointAt(1) == '|');
+  }
+
+  public static boolean isNormalizedWindowsDriveLetter(String s) {
+    return isWindowsDriveLetter(s) && s.codePointAt(1) == ':';
   }
 }

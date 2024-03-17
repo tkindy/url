@@ -22,10 +22,12 @@ import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiTabOrNewline;
 import static com.tylerkindy.url.CharacterUtils.isC0ControlOrSpace;
 import static com.tylerkindy.url.CharacterUtils.isNormalizedWindowsDriveLetter;
+import static com.tylerkindy.url.CharacterUtils.isWindowsDriveLetter;
 import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
+import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.Host.Empty;
 import com.tylerkindy.url.Pointer.PointedAt;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
@@ -36,6 +38,7 @@ import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
 import com.tylerkindy.url.UrlPath.Opaque;
 import com.tylerkindy.url.ValidationError.FileInvalidWindowsDriveLetter;
+import com.tylerkindy.url.ValidationError.FileInvalidWindowsDriveLetterHost;
 import com.tylerkindy.url.ValidationError.HostMissing;
 import com.tylerkindy.url.ValidationError.InvalidCredentials;
 import com.tylerkindy.url.ValidationError.InvalidReverseSolidus;
@@ -458,7 +461,38 @@ final class UrlParser {
           }
         }
         case FILE_HOST -> {
-          throw new IllegalStateException("FILE_HOST not yet implemented");
+          PointedAt pointedAt = pointer.pointedAt();
+
+          if (
+              pointedAt instanceof Eof ||
+                  (pointedAt instanceof CodePoint(var c) &&
+                      (c == '/' || c == '\\' || c == '?' || c == '#'))
+          ) {
+            pointer.decrease();
+
+            if (isWindowsDriveLetter(buffer.toString())) {
+              errors.add(new FileInvalidWindowsDriveLetterHost());
+              state = State.PATH;
+            } else if (buffer.isEmpty()) {
+              host = new Empty();
+              state = State.PATH_START;
+            } else {
+              Optional<Host> maybeHost = HostParser.parseHost(buffer.toString(), !SPECIAL_SCHEMES.contains(scheme), errors);
+              if (maybeHost.isEmpty()) {
+                return new Failure(errors);
+              }
+
+              Host host1 = maybeHost.get();
+
+              if (host1 instanceof Domain(var domain) && domain.equals("localhost")) {
+                host1 = new Empty();
+              }
+
+              host = host1;
+              buffer.delete(0, buffer.length());
+              state = State.PATH_START;
+            }
+          }
         }
         case PATH_START -> {
           if (SPECIAL_SCHEMES.contains(scheme)) {
