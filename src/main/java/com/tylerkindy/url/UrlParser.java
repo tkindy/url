@@ -393,18 +393,18 @@ final class UrlParser {
 
               if (pointer.getCurrentCodePoint() != '/' &&
                   !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')) {
-                path.append("");
+                path = path.append("");
               }
             } else if (
                 (curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e")) &&
                     (pointer.getCurrentCodePoint() != '/' && !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\'))
             ) {
-              path.append("");
+              path = path.append("");
             } else if (!(curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e"))) {
               if (scheme.equals("file")) {
                 throw new IllegalStateException("file URLs not yet fully implemented");
               }
-              path.append(curBuffer);
+              path = path.append(curBuffer);
             }
 
             buffer.delete(0, buffer.length());
