@@ -379,24 +379,31 @@ final class UrlParser {
         }
         case PATH_START -> {
           if (SPECIAL_SCHEMES.contains(scheme)) {
-            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '\\') {
+            if (pointer.pointedAt() instanceof CodePoint(var c) && c == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.PATH;
 
-            if (pointer.isEof() || (pointer.getCurrentCodePoint() != '/' && pointer.getCurrentCodePoint() != '\\')) {
+            if (!(pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
               pointer.decrease();
             }
-          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
-            query = new StringBuilder();
-            state = State.QUERY;
-          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
-            fragment = new StringBuilder();
-            state = State.FRAGMENT;
-          } else if (!pointer.isEof()) {
-            state = State.PATH;
-            if (pointer.getCurrentCodePoint() != '/') {
-              pointer.decrease();
+          } else {
+            switch (pointer.pointedAt()) {
+              case CodePoint(var c) when c == '?' -> {
+                query = new StringBuilder();
+                state = State.QUERY;
+              }
+              case CodePoint(var c) when c == '#' -> {
+                fragment = new StringBuilder();
+                state = State.FRAGMENT;
+              }
+              case CodePoint(var c) -> {
+                state = State.PATH;
+                if (c != '/') {
+                  pointer.decrease();
+                }
+              }
+              case Eof() -> {}
             }
           }
         }
