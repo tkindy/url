@@ -20,7 +20,9 @@ import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
+import com.tylerkindy.url.Pointer.PointedAt;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
+import com.tylerkindy.url.Pointer.PointedAt.Eof;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -178,9 +180,9 @@ final class UrlParser {
         }
         case RELATIVE -> {
           scheme = base.get().scheme();
-          if (pointer.getCurrentCodePoint() == '/') {
+          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
             state = State.RELATIVE_SLASH;
-          } else if (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\') {
+          } else if (SPECIAL_SCHEMES.contains(scheme) && pointer.pointedAt() instanceof CodePoint(var c) && c == '\\') {
             errors.add(new InvalidReverseSolidus());
             state = State.RELATIVE_SLASH;
           } else {
@@ -191,31 +193,36 @@ final class UrlParser {
             path = base.get().path().copy();
             query = base.get().query().map(StringBuilder::new).orElse(null);
 
-            if (pointer.getCurrentCodePoint() == '?') {
-              query = new StringBuilder();
-              state = State.QUERY;
-            } else if (pointer.getCurrentCodePoint() == '#') {
-              fragment = new StringBuilder();
-              state = State.FRAGMENT;
-            } else if (!pointer.isEof()) {
-              query = null;
-
-              if (path instanceof NonOpaque(var segments) && !segments.isEmpty()) {
-                path = new NonOpaque(segments.subList(0, segments.size() - 1));
+            switch (pointer.pointedAt()) {
+              case CodePoint(var c) when c == '?' -> {
+                query = new StringBuilder();
+                state = State.QUERY;
               }
+              case CodePoint(var c) when c == '#' -> {
+                fragment = new StringBuilder();
+                state = State.FRAGMENT;
+              }
+              case CodePoint(var c) -> {
+                query = null;
 
-              state = State.PATH;
-              pointer.decrease();
+                if (path instanceof NonOpaque(var segments) && !segments.isEmpty()) {
+                  path = new NonOpaque(segments.subList(0, segments.size() - 1));
+                }
+
+                state = State.PATH;
+                pointer.decrease();
+              }
+              default -> {}
             }
           }
         }
         case RELATIVE_SLASH -> {
-          if (SPECIAL_SCHEMES.contains(scheme) && (pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '\\')) {
-            if (pointer.getCurrentCodePoint() == '\\') {
+          if (SPECIAL_SCHEMES.contains(scheme) && (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
+            if (c == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
-          } else if (pointer.getCurrentCodePoint() == '/') {
+          } else if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
             state = State.AUTHORITY;
           } else {
             username = new StringBuilder(base.get().username());
@@ -227,7 +234,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_AUTHORITY_SLASHES -> {
-          if (pointer.getCurrentCodePoint() == '/' && pointer.doesRemainingStartWith("/")) {
+          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/' && pointer.doesRemainingStartWith("/")) {
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
             pointer.increase();
           } else {
@@ -237,7 +244,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_AUTHORITY_IGNORE_SLASHES -> {
-          if (pointer.getCurrentCodePoint() != '/' && pointer.getCurrentCodePoint() != '\\') {
+          if (!(pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
             state = State.AUTHORITY;
             pointer.decrease();
           } else {
@@ -245,7 +252,9 @@ final class UrlParser {
           }
         }
         case AUTHORITY -> {
-          if (!pointer.isEof() && pointer.getCurrentCodePoint() == '@') {
+          PointedAt pointedAt = pointer.pointedAt();
+
+          if (pointedAt instanceof CodePoint(var c) && c == '@') {
             errors.add(new InvalidCredentials());
             if (atSignSeen) {
               buffer.insert(0, "%40");
@@ -268,8 +277,8 @@ final class UrlParser {
 
             buffer.delete(0, buffer.length());
           } else if (
-              (pointer.isEof() || pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#') ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
           ) {
             if (atSignSeen && buffer.isEmpty()) {
               errors.add(new HostMissing());
@@ -279,11 +288,17 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.HOST;
           } else {
-            buffer.appendCodePoint(pointer.getCurrentCodePoint());
+            if (pointedAt instanceof CodePoint(var c)) {
+              buffer.appendCodePoint(c);
+            } else {
+              throw new IllegalStateException("Expected code point");
+            }
           }
         }
         case HOST, HOSTNAME -> {
-          if (!pointer.isEof() && pointer.getCurrentCodePoint() == ':' && !insideBrackets) {
+          PointedAt pointedAt = pointer.pointedAt();
+
+          if (pointedAt instanceof CodePoint(var c) && c == ':' && !insideBrackets) {
             if (buffer.isEmpty()) {
               errors.add(new HostMissing());
               return new Failure(errors);
@@ -296,8 +311,8 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.PORT;
           } else if (
-              (pointer.isEof() || pointer.getCurrentCodePoint() == '/' || pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#') ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
           ) {
             pointer.decrease();
             if (SPECIAL_SCHEMES.contains(scheme) && buffer.isEmpty()) {
@@ -312,27 +327,30 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.PATH_START;
           } else {
-            if (pointer.getCurrentCodePoint() == '[') {
-              insideBrackets = true;
+            switch (pointedAt) {
+              case CodePoint(var c) when c == '[' -> {
+                insideBrackets = true;
+              }
+              case CodePoint(var c) when c == ']' -> {
+                insideBrackets = false;
+              }
+              case CodePoint(var c) -> {
+                buffer.appendCodePoint(c);
+              }
+              default -> {
+                throw new IllegalStateException("Expected code point");
+              }
             }
-            if (pointer.getCurrentCodePoint() == ']') {
-              insideBrackets = false;
-            }
-            buffer.appendCodePoint(pointer.getCurrentCodePoint());
           }
         }
         case PORT -> {
-          if (!pointer.isEof() && pointer.getCurrentCodePoint() >= '0'
-              && pointer.getCurrentCodePoint() <= '9') {
-            buffer.appendCodePoint(pointer.getCurrentCodePoint());
+          PointedAt pointedAt = pointer.pointedAt();
+
+          if (pointedAt instanceof CodePoint(var c) && isAsciiDigit(c)) {
+            buffer.appendCodePoint(c);
           } else if (
-              (
-                  pointer.isEof() ||
-                      pointer.getCurrentCodePoint() == '/' ||
-                      pointer.getCurrentCodePoint() == '?' ||
-                      pointer.getCurrentCodePoint() == '#'
-              ) ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
           ) {
             if (!buffer.isEmpty()) {
               int portInt = Integer.parseInt(buffer.toString());
