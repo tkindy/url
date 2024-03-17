@@ -16,6 +16,7 @@
 
 package com.tylerkindy.url;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,20 @@ public sealed interface UrlPath {
     return switch (this) {
       case Opaque o -> throw new AssertionError("Cannot shorten an opaque path");
       case NonOpaque(var segments) -> segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
+    };
+  }
+
+  default UrlPath append(String segment) {
+    return switch (this) {
+      case Opaque o -> throw new AssertionError("Cannot append to an opaque path");
+      case NonOpaque(var segments) -> new NonOpaque(ImmutableList.<String>builder().addAll(segments).add(segment).build());
+    };
+  }
+
+  default boolean isEmpty() {
+    return switch (this) {
+      case Opaque o -> throw new AssertionError("Opaque paths have no concept of empty");
+      case NonOpaque(var segments) -> segments.isEmpty();
     };
   }
 

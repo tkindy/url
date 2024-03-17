@@ -376,16 +376,36 @@ final class UrlParser {
                 curBuffer.equalsIgnoreCase("%2e%2e")) {
               path = path.shorten();
 
-              if (pointer.getCurrentCodePoint() != '/' && !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')) {
-                // TODO: finish
+              if (pointer.getCurrentCodePoint() != '/' &&
+                  !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')) {
+                path.append("");
               }
-              // TODO: finish
+            } else if (
+                (curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e")) &&
+                    (pointer.getCurrentCodePoint() != '/' && !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\'))
+            ) {
+              path.append("");
+            } else if (!(curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e"))) {
+              if (scheme.equals("file")) {
+                throw new IllegalStateException("file URLs not yet fully implemented");
+              }
+              path.append(curBuffer);
             }
 
-            // TODO: finish
-          }
+            buffer.delete(0, buffer.length());
 
-          // TODO: finish
+            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
+              query = "";
+              state = State.QUERY;
+            }
+            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
+              fragment = "";
+              state = State.FRAGMENT;
+            }
+          } else {
+            // TODO: finish
+            throw new IllegalStateException("Not yet implemented");
+          }
         }
         default -> {
           break stateLoop; // TODO: remove
