@@ -19,6 +19,7 @@ package com.tylerkindy.url;
 import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -31,6 +32,7 @@ import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
 import com.tylerkindy.url.ValidationError.PortInvalid;
 import com.tylerkindy.url.ValidationError.PortOutOfRange;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,19 @@ final class UrlParser {
       .put("https", (char) 443)
       .put("ws", (char) 80)
       .put("wss", (char) 443)
+      .build();
+  private static final CharacterSet URL_CODE_POINTS = CharacterSet.builder()
+      .addRange(Range.closed((int) '0', (int) '9'))
+      .addRange(Range.closed((int) 'A', (int) 'Z'))
+      .addRange(Range.closed((int) 'a', (int) 'z'))
+      .addCodePoints(
+          '!', '$', '&', '\'', '(', ')',
+          '*', '+', ',', '-', '.',
+          '/', ':', ';', '=', '?',
+          '@', '_', '~'
+      )
+      // TODO: exclude surrogated and non-chacters from following set
+      .addRange(Range.closed((int) '\u00a0', Character.toCodePoint((char) 0x10, (char) 0xfffd)))
       .build();
 
   private UrlParser() {}
@@ -403,8 +418,21 @@ final class UrlParser {
               state = State.FRAGMENT;
             }
           } else {
-            // TODO: finish
-            throw new IllegalStateException("Not yet implemented");
+            if (!URL_CODE_POINTS.contains(pointer.getCurrentCodePoint()) &&
+                pointer.getCurrentCodePoint() != '%') {
+              errors.add(new InvalidUrlUnit(Character.toString(pointer.getCurrentCodePoint())));
+            }
+            if (pointer.getCurrentCodePoint() == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+              errors.add(new InvalidUrlUnit("Unexpected %"));
+            }
+
+            buffer.append(
+                PercentEncoder.percentEncodeAfterEncoding(
+                    StandardCharsets.UTF_8,
+                    Character.toString(pointer.getCurrentCodePoint()),
+                    PercentEncoder.PATH
+                )
+            );
           }
         }
         default -> {

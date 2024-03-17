@@ -63,6 +63,13 @@ final class CharacterSet implements Predicate<Integer> {
       return this;
     }
 
+    public Builder addCodePoints(char... cs) {
+      for (char c : cs) {
+        addCodePoint(c);
+      }
+      return this;
+    }
+
     public Builder addCodePoint(char c) {
       return addCodePoint((int) c);
     }
