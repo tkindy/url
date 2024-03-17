@@ -55,6 +55,10 @@ final class PercentEncoder {
       .addRange(Range.closed((int) '[', (int) '^'))
       .addCodePoint('|')
       .build();
+  public static final CharacterSet FRAGMENT = CharacterSet.builder()
+      .addAll(C0_CONTROL)
+      .addCodePoints(' ', '"', '<', '>', '`')
+      .build();
 
   private PercentEncoder() {
     throw new RuntimeException();
