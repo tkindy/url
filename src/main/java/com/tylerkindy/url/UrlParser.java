@@ -62,7 +62,7 @@ final class UrlParser {
           '@', '_', '~'
       )
       // TODO: exclude surrogated and non-chacters from following set
-      .addRange(Range.closed((int) '\u00a0', Character.toCodePoint((char) 0x10, (char) 0xfffd)))
+      .addRange(Range.closed(0x00a0, 0x10fffd))
       .build();
 
   private UrlParser() {}
