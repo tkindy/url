@@ -58,7 +58,7 @@ class UrlTest {
                       failure.name(),
                       () -> {
                         Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
-                        assertThatExceptionOfType(RuntimeException.class)
+                        assertThatExceptionOfType(ValidationException.class)
                             .isThrownBy(
                                 () ->
                                     maybeBase
