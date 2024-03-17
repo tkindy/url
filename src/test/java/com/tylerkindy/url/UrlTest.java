@@ -45,12 +45,20 @@ class UrlTest {
                   return dynamicTest(
                       success.name(),
                       () -> {
-                        Url parsed =
-                            success
+                        UrlParseResult result = success
                                 .base()
-                                .map(base -> Url.parseOrThrow(success.input(), Url.parseOrThrow(base)))
-                                .orElseGet(() -> Url.parseOrThrow(success.input()));
-                        assertThat(parsed.toString()).isEqualTo(success.href());
+                            .map(base -> Url.parse(success.input(), Url.parseOrThrow(base)))
+                            .orElseGet(() -> Url.parse(success.input()));
+
+                        assertThat(result)
+                            .withFailMessage(() -> "Expected '%s', but got %s".formatted(
+                                success.href(),
+                                result
+                            ))
+                            .isInstanceOf(UrlParseResult.Success.class);
+
+                        assertThat(((UrlParseResult.Success) result).url().toString())
+                            .isEqualTo(success.href());
                       });
                 }
                 case Failure failure -> {
