@@ -52,4 +52,12 @@ final class CharacterUtils {
   public static boolean isAsciiTabOrNewline(int c) {
     return c == '\t' || c == '\f' || c == '\r' || c == '\n';
   }
+
+  public static boolean isNormalizedWindowsDriveLetter(String s) {
+    if (s.length() != 2 && s.codePointCount(0, 2) != 2) {
+      return false;
+    }
+
+    return isAsciiAlpha(s.codePointAt(0)) && s.codePointAt(1) == ':';
+  }
 }

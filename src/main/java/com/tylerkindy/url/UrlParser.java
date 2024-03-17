@@ -21,6 +21,7 @@ import static com.tylerkindy.url.CharacterUtils.isAsciiAlphanumeric;
 import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiTabOrNewline;
 import static com.tylerkindy.url.CharacterUtils.isC0ControlOrSpace;
+import static com.tylerkindy.url.CharacterUtils.isNormalizedWindowsDriveLetter;
 import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
@@ -432,7 +433,29 @@ final class UrlParser {
           }
         }
         case FILE_SLASH -> {
-          throw new IllegalStateException("FILE_SLASH not yet implemented");
+          if (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\')) {
+            if (c == '\\') {
+              errors.add(new InvalidReverseSolidus());
+            }
+            state = State.FILE_HOST;
+          } else {
+            if (base.map(Url::scheme).filter(isEqual("file")).isPresent()) {
+              Url b = base.get();
+              host = b.host().orElse(null);
+
+              if (
+                  !pointer.doesRemainingStartWithWindowsDriveLetter()
+              ) {
+                String baseFirstPathSegment = ((NonOpaque) b.path()).segments().getFirst();
+
+                if (isNormalizedWindowsDriveLetter(baseFirstPathSegment)) {
+                  path.append(baseFirstPathSegment);
+                }
+              }
+            }
+            state = State.PATH;
+            pointer.decrease();
+          }
         }
         case FILE_HOST -> {
           throw new IllegalStateException("FILE_HOST not yet implemented");
