@@ -21,17 +21,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.Range;
 import org.junit.jupiter.api.Test;
 
-class PercentEncodeSetTest {
+class CharacterSetTest {
   @Test
   void itContainsIndividualCodePoint() {
-    PercentEncodeSet set = PercentEncodeSet.builder().addCodePoint('a').build();
+    CharacterSet set = CharacterSet.builder().addCodePoint('a').build();
     assertThat(set.contains('a')).isTrue();
   }
 
   @Test
   void itContainsRangeOfCodePoints() {
-    PercentEncodeSet set =
-        PercentEncodeSet.builder().addRange(Range.closed((int) 'b', (int) 'c')).build();
+    CharacterSet set =
+        CharacterSet.builder().addRange(Range.closed((int) 'b', (int) 'c')).build();
 
     assertThat(set.contains('a')).isFalse();
     assertThat(set.contains('b')).isTrue();
@@ -41,14 +41,14 @@ class PercentEncodeSetTest {
 
   @Test
   void itDoesNotContainMissingCodePoint() {
-    PercentEncodeSet set = PercentEncodeSet.builder().addCodePoint('a').build();
+    CharacterSet set = CharacterSet.builder().addCodePoint('a').build();
     assertThat(set.contains('b')).isFalse();
   }
 
   @Test
   void itUnionsRangesAndIndividualCodePoints() {
-    PercentEncodeSet set =
-        PercentEncodeSet.builder()
+    CharacterSet set =
+        CharacterSet.builder()
             .addRange(Range.closed((int) 'b', (int) 'c'))
             .addCodePoint('e')
             .build();

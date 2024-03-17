@@ -21,11 +21,11 @@ import com.google.common.collect.Range;
 import java.util.Set;
 import java.util.function.Predicate;
 
-final class PercentEncodeSet implements Predicate<Integer> {
+final class CharacterSet implements Predicate<Integer> {
   private final Set<Range<Integer>> ranges;
   private final Set<Integer> extras;
 
-  private PercentEncodeSet(Set<Range<Integer>> ranges, Set<Integer> extras) {
+  private CharacterSet(Set<Range<Integer>> ranges, Set<Integer> extras) {
     this.ranges = ranges;
     this.extras = extras;
   }
@@ -52,7 +52,7 @@ final class PercentEncodeSet implements Predicate<Integer> {
       this.extras = ImmutableSet.builder();
     }
 
-    public Builder addAll(PercentEncodeSet other) {
+    public Builder addAll(CharacterSet other) {
       ranges.addAll(other.ranges);
       extras.addAll(other.extras);
       return this;
@@ -72,8 +72,8 @@ final class PercentEncodeSet implements Predicate<Integer> {
       return this;
     }
 
-    public PercentEncodeSet build() {
-      return new PercentEncodeSet(ranges.build(), extras.build());
+    public CharacterSet build() {
+      return new CharacterSet(ranges.build(), extras.build());
     }
   }
 }

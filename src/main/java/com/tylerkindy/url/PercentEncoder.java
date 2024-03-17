@@ -22,11 +22,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 final class PercentEncoder {
-  public static final PercentEncodeSet C0_CONTROL = PercentEncodeSet.builder()
+  public static final CharacterSet C0_CONTROL = CharacterSet.builder()
       .addRange(Range.closed((int) '\u0000', (int) '\u001F'))
       .addRange(Range.greaterThan((int) '~'))
       .build();
-  public static final PercentEncodeSet QUERY = PercentEncodeSet.builder()
+  public static final CharacterSet QUERY = CharacterSet.builder()
       .addAll(C0_CONTROL)
       .addCodePoint(' ')
       .addCodePoint('"')
@@ -34,14 +34,14 @@ final class PercentEncoder {
       .addCodePoint('<')
       .addCodePoint('>')
       .build();
-  public static final PercentEncodeSet PATH = PercentEncodeSet.builder()
+  public static final CharacterSet PATH = CharacterSet.builder()
       .addAll(QUERY)
       .addCodePoint('?')
       .addCodePoint('`')
       .addCodePoint('{')
       .addCodePoint('}')
       .build();
-  public static final PercentEncodeSet USERINFO = PercentEncodeSet.builder()
+  public static final CharacterSet USERINFO = CharacterSet.builder()
       .addAll(PATH)
       .addCodePoint('/')
       .addCodePoint(':')
@@ -56,7 +56,7 @@ final class PercentEncoder {
     throw new RuntimeException();
   }
 
-  public static String utf8PecentEncode(int codePoint, PercentEncodeSet percentEncodeSet) {
+  public static String utf8PecentEncode(int codePoint, CharacterSet percentEncodeSet) {
     return percentEncodeAfterEncoding(
         StandardCharsets.UTF_8,
         Character.toString(codePoint),
@@ -64,11 +64,11 @@ final class PercentEncoder {
     );
   }
 
-  public static String percentEncodeAfterEncoding(Charset encoding, String input, PercentEncodeSet percentEncodeSet) {
+  public static String percentEncodeAfterEncoding(Charset encoding, String input, CharacterSet percentEncodeSet) {
     return percentEncodeAfterEncoding(encoding, input, percentEncodeSet, false);
   }
 
-  public static String percentEncodeAfterEncoding(Charset encoding, String input, PercentEncodeSet percentEncodeSet, boolean spaceAsPlus) {
+  public static String percentEncodeAfterEncoding(Charset encoding, String input, CharacterSet percentEncodeSet, boolean spaceAsPlus) {
     ByteBuffer encoded = encoding.encode(input);
 
     StringBuilder output = new StringBuilder();
