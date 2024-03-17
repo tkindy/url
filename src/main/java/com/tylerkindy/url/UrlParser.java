@@ -408,10 +408,13 @@ final class UrlParser {
           }
         }
         case PATH -> {
-          if ((pointer.isEof() || pointer.getCurrentCodePoint() == '/') ||
-              (SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\') ||
-              (pointer.getCurrentCodePoint() == '?' || pointer.getCurrentCodePoint() == '#')) {
-            if (SPECIAL_SCHEMES.contains(scheme) && !pointer.isEof() && pointer.getCurrentCodePoint() == '\\') {
+          PointedAt pointedAt = pointer.pointedAt();
+          if (
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && c == '/')) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\') ||
+                  (pointedAt instanceof CodePoint(var c) && (c == '?' || c == '#'))
+          ) {
+            if (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
 
@@ -422,13 +425,17 @@ final class UrlParser {
                 curBuffer.equalsIgnoreCase("%2e%2e")) {
               path = path.shorten();
 
-              if (pointer.getCurrentCodePoint() != '/' &&
-                  !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\')) {
+              if (
+                  !(pointedAt instanceof CodePoint(var cp) && cp == '/') &&
+                      !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+              ) {
                 path = path.append("");
               }
             } else if (
                 (curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e")) &&
-                    (pointer.getCurrentCodePoint() != '/' && !(SPECIAL_SCHEMES.contains(scheme) && pointer.getCurrentCodePoint() == '\\'))
+                    !(pointedAt instanceof CodePoint(var c) && c == '/') &&
+                    !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+
             ) {
               path = path.append("");
             } else if (!(curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e"))) {
@@ -440,53 +447,66 @@ final class UrlParser {
 
             buffer.delete(0, buffer.length());
 
-            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
-              query = new StringBuilder();
-              state = State.QUERY;
-            }
-            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
-              fragment = new StringBuilder();
-              state = State.FRAGMENT;
+            switch (pointedAt) {
+              case CodePoint(var c) when c == '?' -> {
+                query = new StringBuilder();
+                state = State.QUERY;
+              }
+              case CodePoint(var c) when c == '#' -> {
+                fragment = new StringBuilder();
+                state = State.FRAGMENT;
+              }
+              default -> {}
             }
           } else {
-            if (!URL_CODE_POINTS.contains(pointer.getCurrentCodePoint()) &&
-                pointer.getCurrentCodePoint() != '%') {
-              errors.add(new InvalidUrlUnit(Character.toString(pointer.getCurrentCodePoint())));
+            int c = switch (pointedAt) {
+              case CodePoint(var cp) -> cp;
+              case Eof() -> throw new IllegalStateException("Can't be EOF here");
+            };
+            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+              errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
-            if (pointer.getCurrentCodePoint() == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+            if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
 
             buffer.append(
                 PercentEncoder.percentEncodeAfterEncoding(
                     StandardCharsets.UTF_8,
-                    Character.toString(pointer.getCurrentCodePoint()),
+                    Character.toString(c),
                     PercentEncoder.PATH
                 )
             );
           }
         }
         case OPAQUE_PATH -> {
-          if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
-            query = new StringBuilder();
-            state = State.QUERY;
-          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
-            fragment = new StringBuilder();
-            state = State.FRAGMENT;
-          } else {
-            if (!pointer.isEof() && !URL_CODE_POINTS.contains(pointer.getCurrentCodePoint()) && pointer.getCurrentCodePoint() != '%') {
-              errors.add(new InvalidUrlUnit(Character.toString(pointer.getCurrentCodePoint())));
+          switch (pointer.pointedAt()) {
+            case CodePoint(var c) when c == '?' -> {
+              query = new StringBuilder();
+              state = State.QUERY;
             }
-            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+            case CodePoint(var c) when c == '#' -> {
+              fragment = new StringBuilder();
+              state = State.FRAGMENT;
+            }
+            case CodePoint(var c) when !URL_CODE_POINTS.contains(c) && c != '%' -> {
+              errors.add(new InvalidUrlUnit(Character.toString(c)));
+            }
+            case CodePoint(var c) when c == '%' && !pointer.doesRemainingStartWith("%d%d") -> {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
-            if (!pointer.isEof()) {
-              path.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(pointer.getCurrentCodePoint()), PercentEncoder.C0_CONTROL));
+            case CodePoint(var c) -> {
+              path.append(
+                  PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.C0_CONTROL)
+              );
             }
+            case Eof() -> {}
           }
         }
         case QUERY -> {
-          if (pointer.isEof() || pointer.getCurrentCodePoint() == '#') {
+          PointedAt pointedAt = pointer.pointedAt();
+
+          if (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && c == '#')) {
             CharacterSet queryPercentEncodeSet =
                 SPECIAL_SCHEMES.contains(scheme) ?
                     PercentEncoder.SPECIAL_QUERY :
@@ -494,12 +514,15 @@ final class UrlParser {
             query.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, buffer.toString(), queryPercentEncodeSet));
             buffer.delete(0, buffer.length());
 
-            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
+            if (pointedAt instanceof CodePoint) {
               fragment = new StringBuilder();
               state = State.FRAGMENT;
             }
           } else {
-            int c = pointer.getCurrentCodePoint();
+            int c = switch (pointedAt) {
+              case CodePoint(var cp) -> cp;
+              case Eof() -> throw new IllegalStateException("Can't be EOF here");
+            };
             if (!URL_CODE_POINTS.contains(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
@@ -510,15 +533,19 @@ final class UrlParser {
           }
         }
         case FRAGMENT -> {
-          if (!pointer.isEof()) {
-            int c = pointer.getCurrentCodePoint();
-            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+          switch (pointer.pointedAt()) {
+            case CodePoint(var c) when !URL_CODE_POINTS.contains(c) && c != '%' -> {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
-            if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+            case CodePoint(var c) when c == '%' && !pointer.doesRemainingStartWith("%d%d") -> {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
-            fragment.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.FRAGMENT));
+            case CodePoint(var c) -> {
+              fragment.append(
+                  PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.FRAGMENT)
+              );
+            }
+            case Eof() -> {}
           }
         }
         default -> {
@@ -526,7 +553,7 @@ final class UrlParser {
         }
       }
 
-      if (pointer.isEof()) {
+      if (pointer.pointedAt() instanceof Eof) {
         break;
       } else {
         pointer.increase();
