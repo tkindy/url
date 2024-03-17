@@ -18,6 +18,7 @@ package com.tylerkindy.url;
 
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
+import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
 import com.tylerkindy.url.Pointer.PrefixPattern.AsciiDigit;
 import com.tylerkindy.url.Pointer.PrefixPattern.Literal;
 import java.util.function.IntSupplier;
@@ -45,7 +46,7 @@ final class Pointer {
       return new Eof();
     }
     if (codePointIndex == -1) {
-      throw new IllegalStateException("Pointer points nowhere");
+      return new Nowhere();
     }
     return new CodePoint(getCurrentCodePoint());
   }
@@ -182,6 +183,7 @@ final class Pointer {
   }
 
   public sealed interface PointedAt {
+    record Nowhere() implements PointedAt {}
     record Eof() implements PointedAt {}
     record CodePoint(int codePoint) implements PointedAt {}
   }

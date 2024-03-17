@@ -23,6 +23,7 @@ import com.google.common.collect.Range;
 import com.tylerkindy.url.Pointer.PointedAt;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
+import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -404,6 +405,7 @@ final class UrlParser {
                 }
               }
               case Eof() -> {}
+              case Nowhere() -> {}
             }
           }
         }
@@ -461,7 +463,7 @@ final class UrlParser {
           } else {
             int c = switch (pointedAt) {
               case CodePoint(var cp) -> cp;
-              case Eof() -> throw new IllegalStateException("Can't be EOF here");
+              default -> throw new IllegalStateException("Must be code point here!");
             };
             if (!URL_CODE_POINTS.contains(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
@@ -501,6 +503,7 @@ final class UrlParser {
               );
             }
             case Eof() -> {}
+            case Nowhere() -> {}
           }
         }
         case QUERY -> {
@@ -521,7 +524,7 @@ final class UrlParser {
           } else {
             int c = switch (pointedAt) {
               case CodePoint(var cp) -> cp;
-              case Eof() -> throw new IllegalStateException("Can't be EOF here");
+              default -> throw new IllegalStateException("Must be code point here!");
             };
             if (!URL_CODE_POINTS.contains(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
@@ -546,6 +549,7 @@ final class UrlParser {
               );
             }
             case Eof() -> {}
+            case Nowhere() -> {}
           }
         }
         default -> {
