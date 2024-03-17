@@ -103,7 +103,6 @@ final class UrlParser {
     StringBuilder query = null;
     StringBuilder fragment = null;
 
-    stateLoop:
     while (true) {
       switch (state) {
         case SCHEME_START -> {
