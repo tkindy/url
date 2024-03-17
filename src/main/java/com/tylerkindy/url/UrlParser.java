@@ -545,20 +545,17 @@ final class UrlParser {
           }
         }
         case FRAGMENT -> {
-          switch (pointer.pointedAt()) {
-            case CodePoint(var c) when !URL_CODE_POINTS.contains(c) && c != '%' -> {
+          if (pointer.pointedAt() instanceof CodePoint(var c)) {
+            if (!URL_CODE_POINTS.contains(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
-            case CodePoint(var c) when c == '%' && !pointer.doesRemainingStartWith("%d%d") -> {
+            if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
-            case CodePoint(var c) -> {
-              fragment.append(
-                  PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.FRAGMENT)
-              );
-            }
-            case Eof() -> {}
-            case Nowhere() -> {}
+
+            fragment.append(
+                PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.FRAGMENT)
+            );
           }
         }
       }
