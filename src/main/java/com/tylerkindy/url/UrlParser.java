@@ -92,10 +92,12 @@ final class UrlParser {
     while (true) {
       switch (state) {
         case SCHEME_START -> {
-          int c = pointer.getCurrentCodePoint();
-          if (isAsciiAlpha(c)) {
-            buffer.appendCodePoint(Character.toLowerCase(c));
-            state = State.SCHEME;
+          if (!pointer.isEof()) {
+            int c = pointer.getCurrentCodePoint();
+            if (isAsciiAlpha(c)) {
+              buffer.appendCodePoint(Character.toLowerCase(c));
+              state = State.SCHEME;
+            }
           } else {
             state = State.NO_SCHEME;
             pointer.decrease();
