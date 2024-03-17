@@ -102,29 +102,31 @@ final class UrlParser {
           }
         }
         case SCHEME -> {
-          int c = pointer.getCurrentCodePoint();
-          if (isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.') {
-            buffer.appendCodePoint(Character.toLowerCase(c));
-          } else if (c == ':') {
-            scheme = buffer.toString();
-            buffer.delete(0, buffer.length());
+          if (!pointer.isEof()) {
+            int c = pointer.getCurrentCodePoint();
+            if (isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.') {
+              buffer.appendCodePoint(Character.toLowerCase(c));
+            } else if (c == ':') {
+              scheme = buffer.toString();
+              buffer.delete(0, buffer.length());
 
-            if (scheme.equals("file")) {
-              if (!pointer.doesRemainingStartWith("//")) {
-                errors.add(new SpecialSchemeMissingFollowingSolidus());
+              if (scheme.equals("file")) {
+                if (!pointer.doesRemainingStartWith("//")) {
+                  errors.add(new SpecialSchemeMissingFollowingSolidus());
+                }
+                state = State.FILE;
+              } else if (SPECIAL_SCHEMES.contains(scheme)
+                  && base.map(Url::scheme).filter(isEqual(scheme)).isPresent()) {
+                state = State.SPECIAL_RELATIVE_OR_AUTHORITY;
+              } else if (SPECIAL_SCHEMES.contains(scheme)) {
+                state = State.SPECIAL_AUTHORITY_SLASHES;
+              } else if (pointer.doesRemainingStartWith("/")) {
+                state = State.PATH_OR_AUTHORITY;
+                pointer.increase();
+              } else {
+                path = new Opaque("");
+                state = State.OPAQUE_PATH;
               }
-              state = State.FILE;
-            } else if (SPECIAL_SCHEMES.contains(scheme)
-                && base.map(Url::scheme).filter(isEqual(scheme)).isPresent()) {
-              state = State.SPECIAL_RELATIVE_OR_AUTHORITY;
-            } else if (SPECIAL_SCHEMES.contains(scheme)) {
-              state = State.SPECIAL_AUTHORITY_SLASHES;
-            } else if (pointer.doesRemainingStartWith("/")) {
-              state = State.PATH_OR_AUTHORITY;
-              pointer.increase();
-            } else {
-              path = new Opaque("");
-              state = State.OPAQUE_PATH;
             }
           } else {
             buffer.delete(0, buffer.length());
