@@ -81,12 +81,14 @@ final class Pointer {
       if (isAtEnd.test(this)) {
         return;
       }
-      if (indexUpdater.update(codePointIndex, 1) == -1) {
+
+      int newCodePointIndex = indexUpdater.update(codePointIndex, 1);
+      if (newCodePointIndex == -1) {
         codePointIndex = -1;
         codeUnitIndex = -1;
         continue;
       }
-      if (indexUpdater.update(codePointIndex, 1) == 0) {
+      if (newCodePointIndex == 0) {
         codePointIndex = 0;
         codeUnitIndex = 0;
         continue;
@@ -94,7 +96,7 @@ final class Pointer {
 
       int codePoint = nextCodePoint.getAsInt();
 
-      codePointIndex = indexUpdater.update(codePointIndex, 1);
+      codePointIndex = newCodePointIndex;
       if (codePoint <= 0xFFFF) {
         // Basic Multilingual Plane, made of one char
         codeUnitIndex = indexUpdater.update(codeUnitIndex, 1);
