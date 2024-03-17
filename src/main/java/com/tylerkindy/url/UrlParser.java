@@ -338,6 +338,29 @@ final class UrlParser {
             return new Failure(errors);
           }
         }
+        case PATH_START -> {
+          if (SPECIAL_SCHEMES.contains(scheme)) {
+            if (!pointer.isEof() && pointer.getCurrentCodePoint() == '\\') {
+              errors.add(new InvalidReverseSolidus());
+            }
+            state = State.PATH;
+
+            if (pointer.isEof() || (pointer.getCurrentCodePoint() != '/' && pointer.getCurrentCodePoint() != '\\')) {
+              pointer.decrease();
+            }
+          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '?') {
+            query = "";
+            state = State.QUERY;
+          } else if (!pointer.isEof() && pointer.getCurrentCodePoint() == '#') {
+            fragment = "";
+            state = State.FRAGMENT;
+          } else if (!pointer.isEof()) {
+            state = State.PATH;
+            if (pointer.getCurrentCodePoint() != '/') {
+              pointer.decrease();
+            }
+          }
+        }
         default -> {
           break stateLoop; // TODO: remove
         }
