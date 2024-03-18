@@ -74,6 +74,7 @@ final class HostParser {
     }
     String domain = PercentEncoder.percentDecode(input);
     // TODO: domain to ASCII
+    // TODO: parse IPv4
     return Optional.of(new Domain(domain));
   }
 
