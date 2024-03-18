@@ -66,7 +66,7 @@ final class HostParser {
   }
 
   private static Optional<Ipv6Address> parseIpv6(String input, List<ValidationError> errors) {
-    Ipv6Address address = new Ipv6Address(repeat((char) 0, 8));
+    List<Character> pieces = repeat((char) 0, 8);
     int pieceIndex = 0;
     Integer compress = null;
     Pointer pointer = new Pointer(input);
@@ -159,9 +159,9 @@ final class HostParser {
             pointer.increase();
           }
 
-          address.pieces().set(
+          pieces.set(
               pieceIndex,
-              (char) (address.pieces().get(pieceIndex) * 0x100 + ipv4Piece)
+              (char) (pieces.get(pieceIndex) * 0x100 + ipv4Piece)
           );
 
           numbersSeen += 1;
@@ -187,7 +187,7 @@ final class HostParser {
         return Optional.empty();
       }
 
-      address.pieces().set(pieceIndex, (char) value);
+      pieces.set(pieceIndex, (char) value);
       pieceIndex += 1;
     }
 
@@ -196,9 +196,9 @@ final class HostParser {
       pieceIndex = 7;
 
       while (pieceIndex != 0 && swaps > 0) {
-        char temp = address.pieces().get(pieceIndex);
-        address.pieces().set(pieceIndex, address.pieces().get(compress + swaps - 1));
-        address.pieces().set(compress + swaps - 1, temp);
+        char temp = pieces.get(pieceIndex);
+        pieces.set(pieceIndex, pieces.get(compress + swaps - 1));
+        pieces.set(compress + swaps - 1, temp);
 
         pieceIndex -= 1;
         swaps -= 1;
@@ -208,7 +208,7 @@ final class HostParser {
       return Optional.empty();
     }
 
-    return Optional.of(new Ipv6Address(ImmutableList.copyOf(address.pieces())));
+    return Optional.of(new Ipv6Address(ImmutableList.copyOf(pieces)));
   }
 
   private static Optional<String> parseOpaque(String input, List<ValidationError> errors) {
