@@ -265,7 +265,7 @@ final class UrlParser {
                 continue;
               }
 
-              String encodedCodePoints = PercentEncoder.utf8PecentEncode(codePoint, PercentEncoder.USERINFO);
+              String encodedCodePoints = PercentEncoder.utf8PercentEncode(codePoint, PercentEncoder.USERINFO);
               if (passwordTokenSeen) {
                 password.append(encodedCodePoints);
               } else {

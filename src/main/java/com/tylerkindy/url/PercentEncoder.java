@@ -68,7 +68,7 @@ final class PercentEncoder {
     return percentEncodeAfterEncoding(StandardCharsets.UTF_8, input, percentEncodeSet);
   }
 
-  public static String utf8PecentEncode(int codePoint, CharacterSet percentEncodeSet) {
+  public static String utf8PercentEncode(int codePoint, CharacterSet percentEncodeSet) {
     return percentEncodeAfterEncoding(
         StandardCharsets.UTF_8,
         Character.toString(codePoint),
