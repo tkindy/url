@@ -16,7 +16,23 @@
 
 package com.tylerkindy.url;
 
+import com.google.common.collect.Range;
+
 final class CharacterUtils {
+  private static final CharacterSet URL_CODE_POINTS = CharacterSet.builder()
+      .addRange(Range.closed((int) '0', (int) '9'))
+      .addRange(Range.closed((int) 'A', (int) 'Z'))
+      .addRange(Range.closed((int) 'a', (int) 'z'))
+      .addCodePoints(
+          '!', '$', '&', '\'', '(', ')',
+          '*', '+', ',', '-', '.',
+          '/', ':', ';', '=', '?',
+          '@', '_', '~'
+      )
+      // TODO: exclude surrogated and non-chacters from following set
+      .addRange(Range.closed(0x00a0, 0x10fffd))
+      .build();
+
   private CharacterUtils() {
     throw new RuntimeException();
   }
@@ -76,5 +92,9 @@ final class CharacterUtils {
 
   public static boolean isNormalizedWindowsDriveLetter(String s) {
     return isWindowsDriveLetter(s) && s.codePointAt(1) == ':';
+  }
+
+  public static boolean isUrlCodePoint(int codePoint) {
+    return URL_CODE_POINTS.contains(codePoint);
   }
 }

@@ -22,11 +22,11 @@ import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiTabOrNewline;
 import static com.tylerkindy.url.CharacterUtils.isC0ControlOrSpace;
 import static com.tylerkindy.url.CharacterUtils.isNormalizedWindowsDriveLetter;
+import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
 import static com.tylerkindy.url.CharacterUtils.isWindowsDriveLetter;
 import static java.util.function.Predicate.isEqual;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Range;
 import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.Host.Empty;
 import com.tylerkindy.url.Pointer.PointedAt;
@@ -65,19 +65,6 @@ final class UrlParser {
       .put("https", (char) 443)
       .put("ws", (char) 80)
       .put("wss", (char) 443)
-      .build();
-  private static final CharacterSet URL_CODE_POINTS = CharacterSet.builder()
-      .addRange(Range.closed((int) '0', (int) '9'))
-      .addRange(Range.closed((int) 'A', (int) 'Z'))
-      .addRange(Range.closed((int) 'a', (int) 'z'))
-      .addCodePoints(
-          '!', '$', '&', '\'', '(', ')',
-          '*', '+', ',', '-', '.',
-          '/', ':', ';', '=', '?',
-          '@', '_', '~'
-      )
-      // TODO: exclude surrogated and non-chacters from following set
-      .addRange(Range.closed(0x00a0, 0x10fffd))
       .build();
 
   private UrlParser() {}
@@ -580,7 +567,7 @@ final class UrlParser {
               case CodePoint(var cp) -> cp;
               default -> throw new IllegalStateException("Must be code point here!");
             };
-            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+            if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
             if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
@@ -606,7 +593,7 @@ final class UrlParser {
               fragment = new StringBuilder();
               state = State.FRAGMENT;
             }
-            case CodePoint(var c) when !URL_CODE_POINTS.contains(c) && c != '%' -> {
+            case CodePoint(var c) when !isUrlCodePoint(c) && c != '%' -> {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
             case CodePoint(var c) when c == '%' && !pointer.doesRemainingStartWith("%d%d") -> {
@@ -641,7 +628,7 @@ final class UrlParser {
               case CodePoint(var cp) -> cp;
               default -> throw new IllegalStateException("Must be code point here!");
             };
-            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+            if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
             if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
@@ -652,7 +639,7 @@ final class UrlParser {
         }
         case FRAGMENT -> {
           if (pointer.pointedAt() instanceof CodePoint(var c)) {
-            if (!URL_CODE_POINTS.contains(c) && c != '%') {
+            if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
             if (c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
