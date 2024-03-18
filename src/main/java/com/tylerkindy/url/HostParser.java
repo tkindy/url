@@ -18,12 +18,15 @@ package com.tylerkindy.url;
 
 import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiHexDigit;
+import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
 
 import com.google.common.collect.ImmutableList;
 import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
+import com.tylerkindy.url.ValidationError.HostInvalidCodePoint;
+import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6InvalidCodePoint;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6OutOfRangePart;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6TooFewParts;
@@ -37,8 +40,17 @@ import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 final class HostParser {
+
+  private static final CharacterSet FORBIDDEN_HOST_CODE_POINTS = CharacterSet.builder()
+      .addCodePoints(
+          '\0', '\t', (char) 0xa, '\r', ' ', '#', '/', ':', '<', '>',
+          '?', '@', '[', '\\', ']', '^', '|'
+      )
+      .build();
+
   private HostParser() {
     throw new RuntimeException();
   }
@@ -212,7 +224,28 @@ final class HostParser {
   }
 
   private static Optional<String> parseOpaque(String input, List<ValidationError> errors) {
-    return Optional.empty(); // TODO
+    OptionalInt maybeForbiddenCodePoint = input.codePoints()
+        .filter(FORBIDDEN_HOST_CODE_POINTS::contains)
+        .findAny();
+
+    if (maybeForbiddenCodePoint.isPresent()) {
+      errors.add(new HostInvalidCodePoint());
+      return Optional.empty();
+    }
+
+    input.codePoints()
+        .filter(codePoint -> !isUrlCodePoint(codePoint) && codePoint != '%')
+        .forEach(codePoint -> errors.add(new InvalidUrlUnit(Character.toString(codePoint))));
+
+    for (int i = 0; i < input.length(); i++) {
+      if (input.codePointAt(i) == '%' &&
+          !(isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 1))) &&
+              isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 2))))) {
+        errors.add(new InvalidUrlUnit("Unexpected %"));
+      }
+    }
+
+    return Optional.of(PercentEncoder.utf8PercentEncode(input, PercentEncoder.C0_CONTROL));
   }
   
   private static <T> List<T> repeat(T t, int count) {
