@@ -47,7 +47,6 @@ import com.tylerkindy.url.ValidationError.MissingSchemeNonRelativeUrl;
 import com.tylerkindy.url.ValidationError.PortInvalid;
 import com.tylerkindy.url.ValidationError.PortOutOfRange;
 import com.tylerkindy.url.ValidationError.SpecialSchemeMissingFollowingSolidus;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -574,13 +573,7 @@ final class UrlParser {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
 
-            buffer.append(
-                PercentEncoder.percentEncodeAfterEncoding(
-                    StandardCharsets.UTF_8,
-                    Character.toString(c),
-                    PercentEncoder.PATH
-                )
-            );
+            buffer.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.PATH));
           }
         }
         case OPAQUE_PATH -> {
@@ -600,9 +593,7 @@ final class UrlParser {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
             case CodePoint(var c) -> {
-              path.append(
-                  PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.C0_CONTROL)
-              );
+              path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
             }
             case Eof() -> {}
             case Nowhere() -> {}
@@ -616,7 +607,7 @@ final class UrlParser {
                 SPECIAL_SCHEMES.contains(scheme) ?
                     PercentEncoder.SPECIAL_QUERY :
                     PercentEncoder.QUERY;
-            query.append(PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, buffer.toString(), queryPercentEncodeSet));
+            query.append(PercentEncoder.utf8PercentEncode(buffer.toString(), queryPercentEncodeSet));
             buffer.delete(0, buffer.length());
 
             if (pointedAt instanceof CodePoint) {
@@ -646,9 +637,7 @@ final class UrlParser {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
 
-            fragment.append(
-                PercentEncoder.percentEncodeAfterEncoding(StandardCharsets.UTF_8, Character.toString(c), PercentEncoder.FRAGMENT)
-            );
+            fragment.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.FRAGMENT));
           }
         }
       }
