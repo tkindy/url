@@ -45,6 +45,18 @@ final class CharacterUtils {
     return isAsciiAlpha(codePoint) || isAsciiDigit(codePoint);
   }
 
+  public static boolean isAsciiHexDigit(int codePoint) {
+    return isAsciiUpperHexDigit(codePoint) || isAsciiLowerHexDigit(codePoint);
+  }
+
+  private static boolean isAsciiUpperHexDigit(int codePoint) {
+    return isAsciiDigit(codePoint) || (codePoint >= 'A' && codePoint <= 'F');
+  }
+
+  private static boolean isAsciiLowerHexDigit(int codePoint) {
+    return isAsciiDigit(codePoint) || (codePoint >= 'a' && codePoint <= 'f');
+  }
+
   public static boolean isAsciiDigit(int codePoint) {
     return codePoint >= '0' && codePoint <= '9';
   }

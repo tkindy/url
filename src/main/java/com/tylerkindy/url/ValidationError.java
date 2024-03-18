@@ -24,6 +24,15 @@ public sealed interface ValidationError {
   record InvalidCredentials() implements ValidationError {}
   record HostMissing() implements ValidationError {}
   record Ipv6Unclosed() implements ValidationError {}
+  record Ipv6InvalidCompression() implements ValidationError {}
+  record Ipv6TooManyPieces() implements ValidationError {}
+  record Ipv6MultipleCompression() implements ValidationError {}
+  record Ipv4InIpv6InvalidCodePoint() implements ValidationError {}
+  record Ipv4InIpv6TooManyPieces() implements ValidationError {}
+  record Ipv4InIpv6OutOfRangePart() implements ValidationError {}
+  record Ipv4InIpv6TooFewParts() implements ValidationError {}
+  record Ipv6InvalidCodePoint() implements ValidationError {}
+  record Ipv6TooFewPieces() implements ValidationError {}
   record PortOutOfRange() implements ValidationError {}
   record PortInvalid() implements ValidationError {}
   record FileInvalidWindowsDriveLetter() implements ValidationError {}
