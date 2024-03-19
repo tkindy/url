@@ -542,8 +542,14 @@ final class UrlParser {
             ) {
               path = path.append("");
             } else if (!(curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e"))) {
-              if (scheme.equals("file")) {
-                throw new IllegalStateException("file URLs not yet fully implemented");
+              if (
+                  scheme.equals("file") &&
+                      path instanceof NonOpaque(var segments) &&
+                      !segments.isEmpty() &&
+                      isWindowsDriveLetter(curBuffer)
+              ) {
+                buffer.setCharAt(1, ':');
+                curBuffer = buffer.toString();
               }
               path = path.append(curBuffer);
             }
