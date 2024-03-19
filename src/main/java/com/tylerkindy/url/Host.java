@@ -16,6 +16,9 @@
 
 package com.tylerkindy.url;
 
+import com.tylerkindy.url.IpAddress.Ipv4Address;
+import com.tylerkindy.url.IpAddress.Ipv6Address;
+
 public sealed interface Host {
   record Domain(String domain) implements Host {
     @Override
@@ -26,7 +29,10 @@ public sealed interface Host {
   record IpAddress(com.tylerkindy.url.IpAddress address) implements Host {
     @Override
     public String toString() {
-      return address.toString();
+      return switch (address) {
+        case Ipv4Address ipv4 -> ipv4.toString();
+        case Ipv6Address ipv6 -> "[" + ipv6 + "]";
+      };
     }
   }
   record Opaque(String host) implements Host {
