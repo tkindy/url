@@ -22,7 +22,19 @@ public sealed interface IpAddress {
   record Ipv4Address(int address) implements IpAddress {
     @Override
     public String toString() {
-      return "192.168.1.1"; // TODO
+      StringBuilder output = new StringBuilder();
+      int n = address;
+
+      for (int i = 1; i <= 4; i++) {
+        output.insert(0, n % 256);
+
+        if (i != 4) {
+          output.insert(0, '.');
+        }
+        n = Math.floorDiv(n, 256);
+      }
+
+      return output.toString();
     }
   }
   record Ipv6Address(List<Character> pieces) implements IpAddress {
