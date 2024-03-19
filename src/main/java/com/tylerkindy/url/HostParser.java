@@ -23,6 +23,7 @@ import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
 
 import com.google.common.collect.ImmutableList;
 import com.tylerkindy.url.Host.Domain;
+import com.tylerkindy.url.IpAddress.Ipv4Address;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
@@ -42,6 +43,7 @@ import com.tylerkindy.url.ValidationError.Ipv6TooManyPieces;
 import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
 import java.net.IDN;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -98,7 +100,10 @@ final class HostParser {
       return Optional.empty();
     }
 
-    // TODO: parse IPv4
+    if (endsInANumber(asciiDomain)) {
+      return parseIpv4(asciiDomain, errors)
+          .map(Host.IpAddress::new);
+    }
 
     return Optional.of(new Domain(asciiDomain));
   }
@@ -297,6 +302,76 @@ final class HostParser {
     return Optional.of(result);
   }
 
+  private static boolean endsInANumber(String asciiDomain) {
+    List<String> parts = Arrays.asList(asciiDomain.split("\\."));
+    if (parts.getLast().isEmpty()) {
+      if (parts.size() == 1) {
+        return false;
+      }
+      parts.removeLast();
+    }
+
+    String last = parts.getLast();
+    if (
+        !last.isEmpty() &&
+        last
+            .codePoints()
+            .allMatch(CharacterUtils::isAsciiDigit)
+    ) {
+      return true;
+    }
+
+    return parseIpv4Number(last).isPresent();
+  }
+
+  private static Optional<Ipv4Address> parseIpv4(String asciiDomain, List<ValidationError> errors) {
+    // TODO
+    return Optional.empty();
+  }
+
+  private static Optional<Ipv4NumberParseResult> parseIpv4Number(String input) {
+    if (input.isEmpty()) {
+      return Optional.empty();
+    }
+
+    boolean validationError = false;
+    int r = 10;
+
+    if (
+        input.codePointCount(0, input.length()) >= 2 &&
+            (input.startsWith("0x") || input.startsWith("0X"))
+    ) {
+      validationError = true;
+      input = input.substring(2);
+      r = 16;
+    } else if (
+        input.codePointCount(0, input.length()) >= 2 &&
+            input.startsWith("0")
+    ) {
+      validationError = true;
+      input = input.substring(1);
+      r = 8;
+    }
+
+    if (input.isEmpty()) {
+      return Optional.of(new Ipv4NumberParseResult(0, true));
+    }
+
+    final int radix = r;
+    if (
+        input
+            .codePoints()
+            .anyMatch(codePoint -> Character.digit(codePoint, radix) == -1)
+    ) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new Ipv4NumberParseResult(
+        Integer.parseInt(input, radix),
+        validationError
+    ));
+  }
+
   private static <T> List<T> repeat(T t, int count) {
     List<T> result = new ArrayList<>(count);
     for (int i = 0; i < count; i++) {
@@ -304,4 +379,6 @@ final class HostParser {
     }
     return result;
   }
+
+  private record Ipv4NumberParseResult(int output, boolean validationError) {}
 }
