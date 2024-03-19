@@ -82,7 +82,7 @@ final class CharacterUtils {
   }
 
   public static boolean isWindowsDriveLetter(String s) {
-    if (s.length() != 2 && s.codePointCount(0, 2) != 2) {
+    if (s.length() != 2 || s.codePointCount(0, 2) != 2) {
       return false;
     }
 
