@@ -31,10 +31,15 @@ import com.tylerkindy.url.ValidationError.DomainInvalidCodePoint;
 import com.tylerkindy.url.ValidationError.DomainToAscii;
 import com.tylerkindy.url.ValidationError.HostInvalidCodePoint;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
+import com.tylerkindy.url.ValidationError.Ipv4EmptyPart;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6InvalidCodePoint;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6OutOfRangePart;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6TooFewParts;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6TooManyPieces;
+import com.tylerkindy.url.ValidationError.Ipv4NonDecimalPart;
+import com.tylerkindy.url.ValidationError.Ipv4NonNumericPart;
+import com.tylerkindy.url.ValidationError.Ipv4OutOfRangePart;
+import com.tylerkindy.url.ValidationError.Ipv4TooManyParts;
 import com.tylerkindy.url.ValidationError.Ipv6InvalidCodePoint;
 import com.tylerkindy.url.ValidationError.Ipv6InvalidCompression;
 import com.tylerkindy.url.ValidationError.Ipv6MultipleCompression;
@@ -324,9 +329,55 @@ final class HostParser {
     return parseIpv4Number(last).isPresent();
   }
 
-  private static Optional<Ipv4Address> parseIpv4(String asciiDomain, List<ValidationError> errors) {
-    // TODO
-    return Optional.empty();
+  private static Optional<Ipv4Address> parseIpv4(String input, List<ValidationError> errors) {
+    List<String> parts = Arrays.asList(input.split("\\."));
+    if (parts.getLast().isEmpty()) {
+      errors.add(new Ipv4EmptyPart());
+
+      if (parts.size() > 1) {
+        parts.removeLast();
+      }
+    }
+
+    if (parts.size() > 4) {
+      errors.add(new Ipv4TooManyParts());
+      return Optional.empty();
+    }
+
+    List<Integer> numbers = new ArrayList<>();
+    for (String part : parts) {
+      Optional<Ipv4NumberParseResult> maybeResult = parseIpv4Number(part);
+      if (maybeResult.isEmpty()) {
+        errors.add(new Ipv4NonNumericPart());
+        return Optional.empty();
+      }
+      Ipv4NumberParseResult result = maybeResult.get();
+
+      if (result.validationError()) {
+        errors.add(new Ipv4NonDecimalPart());
+      }
+      numbers.add(result.output());
+    }
+
+    if (numbers.stream().anyMatch(number -> number > 255)) {
+      errors.add(new Ipv4OutOfRangePart());
+    }
+    if (numbers.subList(0, numbers.size() - 1).stream().anyMatch(number -> number > 255)) {
+      return Optional.empty();
+    }
+    if (numbers.getLast() >= Math.pow(256, 5 - numbers.size())) {
+      return Optional.empty();
+    }
+
+    int ipv4 = numbers.removeLast();
+    int counter = 0;
+
+    for (int n : numbers) {
+      ipv4 += n * ((int) Math.pow(256, 3 - counter));
+      counter += 1;
+    }
+
+    return Optional.of(new Ipv4Address(ipv4));
   }
 
   private static Optional<Ipv4NumberParseResult> parseIpv4Number(String input) {

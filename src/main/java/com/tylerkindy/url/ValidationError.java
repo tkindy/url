@@ -40,4 +40,9 @@ public sealed interface ValidationError {
   record FileInvalidWindowsDriveLetterHost() implements ValidationError {}
   record DomainToAscii() implements ValidationError {}
   record DomainInvalidCodePoint() implements ValidationError {}
+  record Ipv4EmptyPart() implements ValidationError {}
+  record Ipv4TooManyParts() implements ValidationError {}
+  record Ipv4NonNumericPart() implements ValidationError {}
+  record Ipv4NonDecimalPart() implements ValidationError {}
+  record Ipv4OutOfRangePart() implements ValidationError {}
 }
