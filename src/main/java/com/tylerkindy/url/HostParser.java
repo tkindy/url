@@ -25,6 +25,7 @@ import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
+import com.tylerkindy.url.ValidationError.DomainToAscii;
 import com.tylerkindy.url.ValidationError.HostInvalidCodePoint;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
 import com.tylerkindy.url.ValidationError.Ipv4InIpv6InvalidCodePoint;
@@ -37,6 +38,7 @@ import com.tylerkindy.url.ValidationError.Ipv6MultipleCompression;
 import com.tylerkindy.url.ValidationError.Ipv6TooFewPieces;
 import com.tylerkindy.url.ValidationError.Ipv6TooManyPieces;
 import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
+import java.net.IDN;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -73,9 +75,17 @@ final class HostParser {
           .map(Host.Opaque::new);
     }
     String domain = PercentEncoder.percentDecode(input);
-    // TODO: domain to ASCII
+
+    Optional<String> maybeAsciiDomain = domainToAscii(domain, false, errors);
+    if (maybeAsciiDomain.isEmpty()) {
+      return Optional.empty();
+    }
+    String asciiDomain = maybeAsciiDomain.get();
+
+    // TODO: check for forbidden code points
     // TODO: parse IPv4
-    return Optional.of(new Domain(domain));
+
+    return Optional.of(new Domain(asciiDomain));
   }
 
   private static Optional<Ipv6Address> parseIpv6(String input, List<ValidationError> errors) {
@@ -248,7 +258,30 @@ final class HostParser {
 
     return Optional.of(PercentEncoder.utf8PercentEncode(input, PercentEncoder.C0_CONTROL));
   }
-  
+
+  private static Optional<String> domainToAscii(
+      String domain,
+      boolean beStrict,
+      List<ValidationError> errors
+  ) {
+    // TODO: implement myself?
+
+    String result;
+    try {
+      result = IDN.toASCII(domain, beStrict ? IDN.USE_STD3_ASCII_RULES : 0);
+    } catch (IllegalArgumentException e) {
+      errors.add(new DomainToAscii());
+      return Optional.empty();
+    }
+
+    if (result.isEmpty()) {
+      errors.add(new DomainToAscii());
+      return Optional.empty();
+    }
+
+    return Optional.of(result);
+  }
+
   private static <T> List<T> repeat(T t, int count) {
     List<T> result = new ArrayList<>(count);
     for (int i = 0; i < count; i++) {

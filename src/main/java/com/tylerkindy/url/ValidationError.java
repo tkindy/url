@@ -38,4 +38,5 @@ public sealed interface ValidationError {
   record PortInvalid() implements ValidationError {}
   record FileInvalidWindowsDriveLetter() implements ValidationError {}
   record FileInvalidWindowsDriveLetterHost() implements ValidationError {}
+  record DomainToAscii() implements ValidationError {}
 }
