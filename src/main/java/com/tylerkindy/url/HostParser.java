@@ -18,6 +18,7 @@ package com.tylerkindy.url;
 
 import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiHexDigit;
+import static com.tylerkindy.url.CharacterUtils.isC0Control;
 import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
 
 import com.google.common.collect.ImmutableList;
@@ -25,6 +26,7 @@ import com.tylerkindy.url.Host.Domain;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
+import com.tylerkindy.url.ValidationError.DomainInvalidCodePoint;
 import com.tylerkindy.url.ValidationError.DomainToAscii;
 import com.tylerkindy.url.ValidationError.HostInvalidCodePoint;
 import com.tylerkindy.url.ValidationError.InvalidUrlUnit;
@@ -82,7 +84,20 @@ final class HostParser {
     }
     String asciiDomain = maybeAsciiDomain.get();
 
-    // TODO: check for forbidden code points
+    if (
+        asciiDomain
+            .codePoints()
+            .anyMatch(codePoint ->
+                FORBIDDEN_HOST_CODE_POINTS.contains(codePoint) ||
+                isC0Control(codePoint) ||
+                codePoint == '%' ||
+                codePoint == 0x7f
+            )
+    ) {
+      errors.add(new DomainInvalidCodePoint());
+      return Optional.empty();
+    }
+
     // TODO: parse IPv4
 
     return Optional.of(new Domain(asciiDomain));

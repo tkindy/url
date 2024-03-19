@@ -41,7 +41,7 @@ final class CharacterUtils {
     return isC0Control(codePoint) || codePoint == ' ';
   }
 
-  private static boolean isC0Control(int codePoint) {
+  public static boolean isC0Control(int codePoint) {
     return codePoint >= 0x0 && codePoint <= 0x1F;
   }
 
