@@ -594,7 +594,7 @@ final class UrlParser {
               errors.add(new InvalidUrlUnit("Unexpected %"));
             }
             case CodePoint(var c) -> {
-              path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
+              path = path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
             }
             case Eof() -> {}
             case Nowhere() -> {}
