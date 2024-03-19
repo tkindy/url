@@ -16,7 +16,10 @@
 
 package com.tylerkindy.url;
 
+import static java.util.function.Predicate.isEqual;
+
 import java.util.List;
+import java.util.Optional;
 
 public sealed interface IpAddress {
   record Ipv4Address(int address) implements IpAddress {
@@ -40,7 +43,55 @@ public sealed interface IpAddress {
   record Ipv6Address(List<Character> pieces) implements IpAddress {
     @Override
     public String toString() {
-      return "::1"; // TODO
+      StringBuilder output = new StringBuilder();
+      Optional<Integer> compress = calcCompress();
+      boolean ignore0 = false;
+
+      for (int pieceIndex = 0; pieceIndex < 8; pieceIndex++) {
+        if (ignore0 && pieces.get(pieceIndex) == 0) {
+          continue;
+        } else if (ignore0) {
+          ignore0 = false;
+        }
+        if (compress.filter(isEqual(pieceIndex)).isPresent()) {
+          String separator = pieceIndex == 0 ? "::" : ":";
+          output.append(separator);
+          ignore0 = true;
+          continue;
+        }
+
+        output.append(Integer.toHexString(pieces.get(pieceIndex)));
+        if (pieceIndex != 7) {
+          output.append(':');
+        }
+      }
+
+      return output.toString();
+    }
+
+    private Optional<Integer> calcCompress() {
+      int current = 0;
+      int longest = 0;
+      int longestIndex = -1;
+
+      for (int i = 0; i < pieces.size(); i++) {
+        char piece = pieces.get(i);
+
+        if (piece == 0) {
+          current += 1;
+        } else {
+          if (current > longest) {
+            longest = current;
+            longestIndex = i - current;
+          }
+          current = 0;
+        }
+      }
+
+      if (longestIndex == -1 || longest == 1) {
+        return Optional.empty();
+      }
+      return Optional.of(longestIndex);
     }
   }
 }
