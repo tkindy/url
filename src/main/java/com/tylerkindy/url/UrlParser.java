@@ -324,19 +324,14 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.PATH_START;
           } else {
-            switch (pointedAt) {
-              case CodePoint(var c) when c == '[' -> {
+            if (pointedAt instanceof CodePoint(var c)) {
+              if (c == '[') {
                 insideBrackets = true;
               }
-              case CodePoint(var c) when c == ']' -> {
+              if (c == ']') {
                 insideBrackets = false;
               }
-              case CodePoint(var c) -> {
-                buffer.appendCodePoint(c);
-              }
-              default -> {
-                throw new IllegalStateException("Expected code point");
-              }
+              buffer.appendCodePoint(c);
             }
           }
         }
