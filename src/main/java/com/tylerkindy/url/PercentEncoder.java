@@ -86,17 +86,19 @@ final class PercentEncoder {
     StringBuilder output = new StringBuilder();
     while (encoded.hasRemaining()) {
       byte b = encoded.get();
-      if (spaceAsPlus && b == ' ') {
+      if (spaceAsPlus && b == 0x20) {
         output.append('+');
         continue;
       }
 
-      if (percentEncodeSet.contains(b)) {
+      int isomorph = Byte.toUnsignedInt(b);
+
+      if (percentEncodeSet.contains(isomorph)) {
         output
             .append('%')
-            .append(Integer.toHexString(b).toUpperCase());
+            .append(Integer.toHexString(isomorph).toUpperCase());
       } else {
-        output.appendCodePoint(b);
+        output.appendCodePoint(isomorph);
       }
     }
 
