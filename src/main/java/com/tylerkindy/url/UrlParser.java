@@ -542,7 +542,7 @@ final class UrlParser {
               if (
                   scheme.equals("file") &&
                       path instanceof NonOpaque(var segments) &&
-                      !segments.isEmpty() &&
+                      segments.isEmpty() &&
                       isWindowsDriveLetter(curBuffer)
               ) {
                 buffer.setCharAt(1, ':');
