@@ -353,7 +353,11 @@ final class UrlParser {
 
               char portChar = (char) portInt;
 
-              if (portChar == DEFAULT_PORTS.get(scheme)) {
+              if (
+                  Optional.ofNullable(DEFAULT_PORTS.get(scheme))
+                      .filter(isEqual(portChar))
+                      .isPresent()
+              ) {
                 port = null;
               } else {
                 port = portChar;
