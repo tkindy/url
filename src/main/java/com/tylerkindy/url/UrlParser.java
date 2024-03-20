@@ -578,7 +578,9 @@ final class UrlParser {
           }
         }
         case OPAQUE_PATH -> {
-          switch (pointer.pointedAt()) {
+          PointedAt pointedAt = pointer.pointedAt();
+
+          switch (pointedAt) {
             case CodePoint(var c) when c == '?' -> {
               query = new StringBuilder();
               state = State.QUERY;
@@ -587,17 +589,17 @@ final class UrlParser {
               fragment = new StringBuilder();
               state = State.FRAGMENT;
             }
-            case CodePoint(var c) when !isUrlCodePoint(c) && c != '%' -> {
-              errors.add(new InvalidUrlUnit(Character.toString(c)));
+            default -> {
+              if (pointedAt instanceof CodePoint(var c) && !isUrlCodePoint(c) && c != '%') {
+                errors.add(new InvalidUrlUnit(Character.toString(c)));
+              }
+              if (pointedAt instanceof CodePoint(var c) && c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+                errors.add(new InvalidUrlUnit("Unexpected %"));
+              }
+              if (pointedAt instanceof CodePoint(var c)) {
+                path = path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
+              }
             }
-            case CodePoint(var c) when c == '%' && !pointer.doesRemainingStartWith("%d%d") -> {
-              errors.add(new InvalidUrlUnit("Unexpected %"));
-            }
-            case CodePoint(var c) -> {
-              path = path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
-            }
-            case Eof() -> {}
-            case Nowhere() -> {}
           }
         }
         case QUERY -> {
