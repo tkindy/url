@@ -17,7 +17,6 @@
 package com.tylerkindy.url;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import com.tylerkindy.url.testdata.TestCase.Failure;
@@ -25,6 +24,7 @@ import com.tylerkindy.url.testdata.TestCase.Success;
 import com.tylerkindy.url.testdata.TestCaseReader;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -66,12 +66,18 @@ class UrlTest {
                       failure.name(),
                       () -> {
                         Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
-                        assertThatExceptionOfType(ValidationException.class)
-                            .isThrownBy(
-                                () ->
-                                    maybeBase
-                                        .map(base -> Url.parseOrThrow(failure.input(), base))
-                                        .orElseGet(() -> Url.parseOrThrow(failure.input())));
+
+                        Url parsed;
+                        try {
+                          parsed = maybeBase
+                              .map(base -> Url.parseOrThrow(failure.input(), base))
+                              .orElseGet(() -> Url.parseOrThrow(failure.input()));
+                        } catch (ValidationException e) {
+                          // successful test
+                          return;
+                        }
+
+                        Fail.fail("Expected parse failure, but got %s", parsed);
                       });
                 }
               }
