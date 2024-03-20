@@ -29,7 +29,7 @@ public sealed interface IpAddress {
       int n = address;
 
       for (int i = 1; i <= 4; i++) {
-        output.insert(0, n % 256);
+        output.insert(0, Integer.remainderUnsigned(n, 256));
 
         if (i != 4) {
           output.insert(0, '.');
