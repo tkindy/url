@@ -472,6 +472,8 @@ final class UrlParser {
               buffer.delete(0, buffer.length());
               state = State.PATH_START;
             }
+          } else {
+            buffer.appendCodePoint(((CodePoint) pointedAt).codePoint());
           }
         }
         case PATH_START -> {
