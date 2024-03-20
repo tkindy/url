@@ -694,8 +694,10 @@ final class UrlParser {
       errors.add(new InvalidUrlUnit("leading or trailing C0 control or space"));
     }
 
-    if (prefixEndIndex != urlStr.length()) {
+    if (prefixEndIndex < suffixStartIndex) {
       urlStr = urlStr.substring(prefixEndIndex, suffixStartIndex);
+    } else {
+      urlStr = "";
     }
 
     StringBuilder sb = new StringBuilder(urlStr.length());
