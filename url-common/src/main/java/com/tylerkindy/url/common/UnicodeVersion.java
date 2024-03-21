@@ -37,4 +37,9 @@ public record UnicodeVersion(int major, int minor, int update) {
       throw new IllegalArgumentException("Illegal " + partName + " version: " + part);
     }
   }
+
+  @Override
+  public String toString() {
+    return major + "." + minor + "." + update;
+  }
 }
