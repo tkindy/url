@@ -12,6 +12,7 @@
     <modules>
         <module>url</module>
         <module>url-tools</module>
+        <module>url-common</module>
     </modules>
 
     <properties>
