@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.tylerkindy;
+package com.tylerkindy.url.tools;
 
-public class Main {
+public class DownloadIdnaMappingTables {
 
   public static void main(String[] args) {
     System.out.println("Hello world!");
