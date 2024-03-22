@@ -107,9 +107,9 @@ public class DownloadIdnaMappingTables {
         writer.write(inputRow.codePoints().toString());
         writer.write(',');
         writer.write(inputRow.status().toString());
+        writer.write(',');
 
         if (inputRow instanceof WithMapping mapped) {
-          writer.write(',');
 
           if (mapped.mapping().size() > 1) {
             writer.write('"');
