@@ -136,7 +136,7 @@ public class DownloadIdnaMappingTables {
   }
 
   private Path buildResourcePath(UnicodeVersion version) {
-    return Path.of("url/src/main/resources/idnamap", version + ".csv");
+    return Path.of("url/src/main/resources/com/tylerkindy/url/idnamap", version + ".csv");
   }
 
   private List<InputRow> readInput(InputStream inputStream) {
