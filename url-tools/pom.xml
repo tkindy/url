@@ -11,4 +11,12 @@
 
   <artifactId>url-tools</artifactId>
 
+  <dependencies>
+    <dependency>
+      <groupId>com.tylerkindy</groupId>
+      <artifactId>url-common</artifactId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
+
 </project>
