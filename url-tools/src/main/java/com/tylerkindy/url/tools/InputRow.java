@@ -19,6 +19,9 @@ package com.tylerkindy.url.tools;
 import java.util.List;
 
 sealed interface InputRow {
+  CodePoints codePoints();
+  Status status();
+
   record WithoutMapping(CodePoints codePoints, Status status) implements InputRow {}
   record WithMapping(
       CodePoints codePoints,

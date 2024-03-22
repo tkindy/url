@@ -17,8 +17,19 @@
 package com.tylerkindy.url.tools;
 
 sealed interface CodePoints {
-  record Single(int codePoint) implements CodePoints {}
-  record Range(int lowCodePoint, int highCodePoint) implements CodePoints {}
+  record Single(int codePoint) implements CodePoints {
+    @Override
+    public String toString() {
+      return Integer.toHexString(codePoint);
+    }
+  }
+
+  record Range(int lowCodePoint, int highCodePoint) implements CodePoints {
+    @Override
+    public String toString() {
+      return Integer.toHexString(lowCodePoint) + ".." + Integer.toHexString(highCodePoint);
+    }
+  }
 
   static CodePoints fromInput(String codePoints) {
     String[] parts = codePoints.split("\\.\\.");

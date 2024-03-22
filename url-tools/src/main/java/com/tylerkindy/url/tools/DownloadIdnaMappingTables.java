@@ -21,7 +21,8 @@ import com.tylerkindy.url.common.UnicodeVersions;
 import com.tylerkindy.url.tools.InputRow.WithMapping;
 import com.tylerkindy.url.tools.InputRow.WithoutMapping;
 import java.io.BufferedReader;
-import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,9 +31,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DownloadIdnaMappingTables {
 
@@ -52,18 +55,19 @@ public class DownloadIdnaMappingTables {
   private void run() {
     for (UnicodeVersion version : UnicodeVersions.getAllSupportedUnicodeVersions()) {
       downloadIfNeeded(version);
-      break;
     }
   }
 
   private void downloadIfNeeded(UnicodeVersion version) {
-    File resourceFile = buildResourcePath(version).toFile();
-    if (resourceFile.exists()) {
+    Path resourceFilePath = buildResourcePath(version);
+    if (Files.exists(resourceFilePath)) {
       // TODO: add real logging
       // TODO: check if file has changed, i.e. Date is different
       System.out.println("Mapping table for " + version + " already exists, skipping");
       return;
     }
+
+    System.out.println("Downloading mapping table for " + version);
 
     HttpResponse<InputStream> response;
     try {
@@ -87,7 +91,48 @@ public class DownloadIdnaMappingTables {
       throw new RuntimeException("Error parsing mapping table for " + version, e);
     }
 
-    System.out.println(inputRows.getFirst());
+    System.out.println("Writing shrunk table to " + resourceFilePath);
+
+    try {
+      Files.createDirectories(resourceFilePath.getParent());
+      Files.createFile(resourceFilePath);
+    } catch (IOException e) {
+      throw new RuntimeException("Error creating " + resourceFilePath, e);
+    }
+
+    try (var writer = new BufferedWriter(new FileWriter(resourceFilePath.toFile()))) {
+      writer.write("codePoints,status,mapping\n");
+
+      for (InputRow inputRow : inputRows) {
+        writer.write(inputRow.codePoints().toString());
+        writer.write(',');
+        writer.write(inputRow.status().toString());
+
+        if (inputRow instanceof WithMapping mapped) {
+          writer.write(',');
+
+          if (mapped.mapping().size() > 1) {
+            writer.write('"');
+          }
+
+          String mapping = mapped.mapping().stream()
+              .map(Integer::toHexString)
+              .collect(Collectors.joining(" "));
+
+          writer.write(mapping);
+
+          if (mapped.mapping().size() > 1) {
+            writer.write('"');
+          }
+        }
+
+        writer.write('\n');
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing table to " + resourceFilePath, e);
+    }
+
+    System.out.println("Done with " + version);
   }
 
   private Path buildResourcePath(UnicodeVersion version) {
