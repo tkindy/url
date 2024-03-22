@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url.tools;
 
+import com.tylerkindy.url.common.CodePoints;
+import com.tylerkindy.url.common.Status;
 import java.util.List;
 
 sealed interface InputRow {

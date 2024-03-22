@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url.tools;
 
+import com.tylerkindy.url.common.CodePoints;
+import com.tylerkindy.url.common.Status;
 import com.tylerkindy.url.common.UnicodeVersion;
 import com.tylerkindy.url.common.UnicodeVersions;
 import com.tylerkindy.url.tools.InputRow.WithMapping;

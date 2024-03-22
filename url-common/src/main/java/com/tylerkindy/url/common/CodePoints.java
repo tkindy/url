@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.tylerkindy.url.tools;
+package com.tylerkindy.url.common;
 
-sealed interface CodePoints {
+public sealed interface CodePoints {
   record Single(int codePoint) implements CodePoints {
     @Override
     public String toString() {

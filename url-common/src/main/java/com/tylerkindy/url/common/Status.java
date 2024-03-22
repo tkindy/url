@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.tylerkindy.url.tools;
+package com.tylerkindy.url.common;
 
-enum Status {
+public enum Status {
   VALID,
   IGNORED,
   MAPPED,
