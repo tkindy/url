@@ -73,15 +73,7 @@ final class Punycode {
           int k = BASE;
 
           while (true) {
-            final int t;
-            if (k <= bias) {
-              t = T_MIN;
-            } else if (k >= bias + T_MAX) {
-              t = T_MAX;
-            } else {
-              t = k - bias;
-            }
-
+            int t = Math.clamp(k - bias, T_MIN, T_MAX);
             if (q < t) {
               break;
             }
