@@ -16,6 +16,8 @@
 
 package com.tylerkindy.url;
 
+import java.util.PrimitiveIterator.OfInt;
+
 /**
  * @see <a href="https://www.rfc-editor.org/rfc/rfc3492.html">RFC 3492</a>
  */
@@ -97,6 +99,70 @@ final class Punycode {
     return output.toString();
   }
 
+  public static String decode(String label) {
+    int n = INITIAL_N;
+    int i = 0;
+    int bias = INITIAL_BIAS;
+
+    StringBuilder output = new StringBuilder(label.length());
+    int outputCodePointLength = 0;
+    OfInt iterator = label.codePoints().iterator();
+
+    int lastDelimiterIndex = label.lastIndexOf(Character.toString(DELIMITER));
+
+    if (lastDelimiterIndex != -1) {
+      for (int j = 0; j < lastDelimiterIndex; j++) {
+        int codePoint = iterator.nextInt();
+        if (!isBasic(codePoint)) {
+          throw new IllegalArgumentException(
+              "Non-basic code point " + Character.getName(codePoint));
+        }
+
+        output.appendCodePoint(codePoint);
+        outputCodePointLength += 1;
+      }
+      iterator.nextInt();
+    }
+
+    while (iterator.hasNext()) {
+      int oldI = i;
+      int w = 1;
+
+      int k = BASE;
+      while (true) {
+        int codePoint = iterator.nextInt();
+        int digit = getDigitValueForCodePoint(codePoint);
+
+        i = Math.addExact(i, Math.multiplyExact(digit, w));
+
+        int t = Math.clamp(k - bias, T_MIN, T_MAX);
+        if (digit < t) {
+          break;
+        }
+
+        w = Math.multiplyExact(w, BASE - t);
+
+        k += BASE;
+      }
+
+      bias = adapt(
+          i - oldI,
+          outputCodePointLength + 1,
+          oldI == 0
+      );
+      n = Math.addExact(n, i / (outputCodePointLength + 1));
+      i = i % (outputCodePointLength + 1);
+      output.insert(
+          output.offsetByCodePoints(0, i),
+          Character.toString(n)
+      );
+      outputCodePointLength += 1;
+      i += 1;
+    }
+
+    return output.toString();
+  }
+
   private static boolean isBasic(int codePoint) {
     return Integer.compareUnsigned(codePoint, 0x7F) <= 0;
   }
@@ -109,6 +175,30 @@ final class Punycode {
       return '0' + digitValue - 26;
     }
     throw new IllegalArgumentException("No code point for digit value " + digitValue);
+  }
+
+  private static int getDigitValueForCodePoint(int codePoint) {
+    if (
+        Integer.compareUnsigned('A', codePoint) <= 0 &&
+            Integer.compareUnsigned(codePoint, 'Z') <= 0
+    ) {
+      return codePoint - 'A';
+    }
+    if (
+        Integer.compareUnsigned('a', codePoint) <= 0 &&
+            Integer.compareUnsigned(codePoint, 'z') <= 0
+    ) {
+      return codePoint - 'a';
+    }
+    if (
+        Integer.compareUnsigned('0', codePoint) <= 0 &&
+            Integer.compareUnsigned(codePoint, '9') <= 0
+    ) {
+      return codePoint - '0' + 26;
+    }
+
+    throw new IllegalArgumentException(
+        "No digit value for code point " + Character.getName(codePoint));
   }
 
   private static int adapt(int delta, int numPoints, boolean firstTime) {
