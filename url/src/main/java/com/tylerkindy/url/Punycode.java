@@ -67,8 +67,7 @@ final class Punycode {
       for (int c : new CodePointIterable(label)) {
         if (c < n) {
           delta = Math.addExact(delta, 1);
-        }
-        if (c == n) {
+        } else if (c == n) {
           int q = delta;
           int k = BASE;
 
