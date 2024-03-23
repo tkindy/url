@@ -99,6 +99,9 @@ final class Punycode {
     return output.toString();
   }
 
+  /**
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc3492.html#section-6.2">Punycode decoding procedure</a>
+   */
   public static String decode(String label) {
     int n = INITIAL_N;
     int i = 0;
