@@ -17,6 +17,7 @@
 package com.tylerkindy.url;
 
 import com.google.common.collect.Range;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -118,8 +119,18 @@ final class PercentEncoder {
         output.put(b);
       } else {
         bytes.mark();
-        byte nextByte1 = bytes.get();
-        byte nextByte2 = bytes.get();
+
+        byte[] nextTwoBytes = new byte[2];
+        try {
+          bytes.get(nextTwoBytes, 0, 2);
+        } catch (BufferUnderflowException e) {
+          output.put(b);
+          continue;
+        }
+
+        byte nextByte1 = nextTwoBytes[0];
+        byte nextByte2 = nextTwoBytes[1];
+
         if (!(isUtf8HexDigit(nextByte1) && isUtf8HexDigit(nextByte2))) {
           output.put(b);
           bytes.reset();
