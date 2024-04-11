@@ -42,7 +42,7 @@ final class IdnaMapper {
     CsvSchema schema = csvMapper.schemaFor(MappingRow.class).withHeader();
 
     try (
-        var mapStream = Resources.getResource("com.tylerkindy.url.idnamap." + version + ".csv")
+        var mapStream = Resources.getResource("com/tylerkindy/url/idnamap/" + version + ".csv")
             .openStream()
     ) {
       return csvMapper.readerFor(MappingRow.class).with(schema).<MappingRow>readValues(mapStream)
