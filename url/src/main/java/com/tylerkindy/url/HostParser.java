@@ -23,6 +23,8 @@ import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
 
 import com.google.common.collect.ImmutableList;
 import com.tylerkindy.url.Host.Domain;
+import com.tylerkindy.url.Idna.IdnaProcessResult;
+import com.tylerkindy.url.Idna.ToAsciiParams;
 import com.tylerkindy.url.IpAddress.Ipv4Address;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
@@ -46,7 +48,6 @@ import com.tylerkindy.url.ValidationError.Ipv6MultipleCompression;
 import com.tylerkindy.url.ValidationError.Ipv6TooFewPieces;
 import com.tylerkindy.url.ValidationError.Ipv6TooManyPieces;
 import com.tylerkindy.url.ValidationError.Ipv6Unclosed;
-import java.net.IDN;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -289,22 +290,23 @@ final class HostParser {
       boolean beStrict,
       List<ValidationError> errors
   ) {
-    // TODO: implement myself?
 
-    String result;
-    try {
-      result = IDN.toASCII(domain, beStrict ? IDN.USE_STD3_ASCII_RULES : 0);
-    } catch (IllegalArgumentException e) {
-      errors.add(new DomainToAscii());
-      return Optional.empty();
-    }
 
-    if (result.isEmpty()) {
-      errors.add(new DomainToAscii());
-      return Optional.empty();
-    }
+      IdnaProcessResult result = Idna.toAscii(domain, ToAsciiParams.builder()
+          .setUseStd3AsciiRules(beStrict)
+          .setCheckHyphens(false)
+          .setCheckBidi(true)
+          .setCheckJoiners(true)
+          .setTransitionalProcessing(false)
+          .setVerifyDnsLength(beStrict)
+          .build());
 
-    return Optional.of(result);
+      if (result.error() || result.domain().isEmpty()) {
+        errors.add(new DomainToAscii());
+        return Optional.empty();
+      }
+
+    return Optional.of(result.domain());
   }
 
   private static boolean endsInANumber(String asciiDomain) {
