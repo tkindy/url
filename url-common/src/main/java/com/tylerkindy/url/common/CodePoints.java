@@ -16,6 +16,9 @@
 
 package com.tylerkindy.url.common;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+@JsonDeserialize(using = CodePointsDeserializer.class)
 public sealed interface CodePoints {
   record Single(int codePoint) implements CodePoints {
     @Override

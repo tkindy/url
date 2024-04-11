@@ -16,11 +16,10 @@
 
 package com.tylerkindy.url.common;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 
-@JsonTypeInfo(use = Id.DEDUCTION)
+@JsonDeserialize(using = MappingRowDeserializer.class)
 public sealed interface MappingRow {
   CodePoints codePoints();
   Status status();
