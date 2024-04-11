@@ -129,12 +129,12 @@ final class Idna {
           }
         }
 
-        if (!isValid(label, false)) {
+        if (!isValid(label, false, checkHyphens)) {
           error = true;
         }
 
       } else {
-        if (!isValid(label, transitionalProcessing)) {
+        if (!isValid(label, transitionalProcessing, checkHyphens)) {
           error = true;
         }
       }
