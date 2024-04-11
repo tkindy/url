@@ -135,12 +135,11 @@ final class PercentEncoder {
           output.put(b);
           bytes.reset();
         } else {
-          byte bytePoint = Byte.parseByte(
-              StandardCharsets.UTF_8.decode(
-                  ByteBuffer.wrap(new byte[]{nextByte1, nextByte2})
-                  )
-                  .toString(),
+          byte bytePoint = (byte) (
+              Integer.parseInt(
+                  StandardCharsets.UTF_8.decode(ByteBuffer.wrap(nextTwoBytes)).toString(),
               16
+              )
           );
           output.put(bytePoint);
         }
