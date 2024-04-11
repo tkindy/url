@@ -192,8 +192,8 @@ final class Idna {
         }
       }
     }
-
-
+    // TODO
+    return true;
   }
 
   public static final class ToAsciiParams {
