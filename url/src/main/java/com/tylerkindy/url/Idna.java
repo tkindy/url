@@ -165,10 +165,8 @@ final class Idna {
       if (label.startsWith("-") || label.endsWith("-")) {
         return false;
       }
-    } else {
-      if (label.startsWith("xn--")) {
-        return false;
-      }
+    } else if (label.startsWith("xn--")) {
+      return false;
     }
 
     if (label.indexOf('.') != -1) {
