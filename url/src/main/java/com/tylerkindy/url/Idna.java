@@ -328,7 +328,5 @@ final class Idna {
     }
   }
 
-  record IdnaProcessResult(String domain, boolean error) {
-
-  }
+  record IdnaProcessResult(String domain, boolean error) {}
 }
