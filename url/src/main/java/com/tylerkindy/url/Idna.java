@@ -52,7 +52,21 @@ final class Idna {
       boolean transitionalProcessing,
       boolean ignoreInvalidPunycode
   ) {
-    boolean error = false;
+    String mapped = map(domain, useStd3AsciiRules, transitionalProcessing);
+    String normalized = normalize(mapped);
+    return convertAndValidate(
+        normalized,
+        checkHyphens,
+        transitionalProcessing,
+        ignoreInvalidPunycode
+    );
+  }
+
+  private static String map(
+      String domain,
+      boolean useStd3AsciiRules,
+      boolean transitionalProcessing
+  ) {
     StringBuilder mappedBuilder = new StringBuilder(domain.length());
 
     int index = 0;
@@ -95,10 +109,22 @@ final class Idna {
       index += Character.charCount(codePoint);
     }
 
-    String mapped = mappedBuilder.toString();
-    String normalized = Normalizer.normalize(mapped, Form.NFC);
+    return mappedBuilder.toString();
+  }
 
+  private static String normalize(String mapped) {
+    return Normalizer.normalize(mapped, Form.NFC);
+  }
+
+  private static IdnaProcessResult convertAndValidate(
+      String normalized,
+      boolean checkHyphens,
+      boolean transitionalProcessing,
+      boolean ignoreInvalidPunycode
+  ) {
     String[] labels = normalized.split("\\.");
+
+    boolean error = false;
     StringBuilder validatedBuilder = new StringBuilder(normalized.length());
 
     for (int i = 0; i < labels.length; i++) {
