@@ -192,7 +192,10 @@ final class Idna {
         }
       }
     }
-    // TODO
+
+    // TODO checkJoiners
+    // TODO checkBidi
+
     return true;
   }
 
