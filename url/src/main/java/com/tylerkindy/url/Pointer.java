@@ -23,6 +23,8 @@ import com.tylerkindy.url.Pointer.PointedAt.Eof;
 import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
 import com.tylerkindy.url.Pointer.PrefixPattern.AsciiHexDigit;
 import com.tylerkindy.url.Pointer.PrefixPattern.Literal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 
@@ -129,23 +131,13 @@ final class Pointer {
   }
 
   public boolean doesRemainingStartWith(String prefix) {
-    long prefixLength = prefix
-        .chars()
-        .filter(c -> c != '%')
-        .count();
-
-    int remainingLength = s.length() - codeUnitIndex - 1;
-    if (remainingLength < prefixLength) {
-      return false;
-    }
-
+    List<PrefixPattern> patterns = new ArrayList<>(prefix.length());
     for (int i = 0; i < prefix.length(); i++) {
-      char sChar = s.charAt(codeUnitIndex + i + 1);
       char prefixChar = prefix.charAt(i);
 
       final PrefixPattern prefixPattern;
       if (prefixChar == '%') {
-        char patternChar = prefix.charAt(i + 1);
+        char patternChar = prefix.charAt(++i);
         prefixPattern = switch (patternChar) {
           case 'd' -> new AsciiHexDigit();
           default -> throw new IllegalArgumentException("Unexpected prefix pattern char: " + patternChar);
@@ -153,6 +145,18 @@ final class Pointer {
       } else {
         prefixPattern = new Literal(prefixChar);
       }
+
+      patterns.add(prefixPattern);
+    }
+
+    int remainingLength = s.length() - codeUnitIndex - 1;
+    if (remainingLength < patterns.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < patterns.size(); i++) {
+      char sChar = s.charAt(codeUnitIndex + i + 1);
+      PrefixPattern prefixPattern = patterns.get(i);
 
       if (!prefixPattern.matches(sChar)) {
         return false;
