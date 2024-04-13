@@ -16,12 +16,15 @@
 
 package com.tylerkindy.url;
 
+import static com.tylerkindy.url.CharacterUtils.isAscii;
+
 import com.tylerkindy.url.common.MappingRow;
 import com.tylerkindy.url.common.MappingRow.WithMapping;
 import com.tylerkindy.url.common.Status;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.List;
+import java.util.Optional;
 
 final class Idna {
 
@@ -29,7 +32,7 @@ final class Idna {
     throw new RuntimeException();
   }
 
-  public static IdnaProcessResult toAscii(String domain, ToAsciiParams params) {
+  public static Optional<String> toAscii(String domain, ToAsciiParams params) {
     IdnaProcessResult result = process(
         domain,
         params.useStd3AsciiRules(),
@@ -39,8 +42,39 @@ final class Idna {
         params.transitionalProcessing(),
         params.ignoreInvalidPunycode()
     );
-    // TODO
-    return result;
+    if (result.error()) {
+      return Optional.empty();
+    }
+
+    String[] labels = result.domain().split("\\.");
+    for (int i = 0; i < labels.length; i++) {
+      String label = labels[i];
+      if (label.codePoints().anyMatch(codePoint -> !isAscii(codePoint))) {
+        String encoded;
+        try {
+          encoded = Punycode.encode(label);
+        } catch (Exception e) {
+          return Optional.empty();
+        }
+        labels[i] = "xn--" + encoded;
+      }
+    }
+
+    if (params.verifyDnsLength()) {
+      int domainLength = labels.length - 1;
+      for (String label : labels) {
+        if (label.isEmpty() || label.length() > 63) {
+          return Optional.empty();
+        }
+        domainLength += label.length();
+      }
+
+      if (domainLength < 1 || domainLength > 253) {
+        return Optional.empty();
+      }
+    }
+
+    return Optional.of(String.join(".", labels));
   }
 
   private static IdnaProcessResult process(

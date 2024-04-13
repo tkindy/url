@@ -45,6 +45,10 @@ final class CharacterUtils {
     return codePoint >= 0x0 && codePoint <= 0x1F;
   }
 
+  public static boolean isAscii(int codePoint) {
+    return codePoint >= 0x0 && codePoint < 0x80;
+  }
+
   public static boolean isAsciiAlpha(int codePoint) {
     return isAsciiLowerAlpha(codePoint) || isAsciiUpperAlpha(codePoint);
   }

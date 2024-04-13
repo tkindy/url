@@ -20,10 +20,10 @@ import static com.tylerkindy.url.CharacterUtils.isAsciiDigit;
 import static com.tylerkindy.url.CharacterUtils.isAsciiHexDigit;
 import static com.tylerkindy.url.CharacterUtils.isC0Control;
 import static com.tylerkindy.url.CharacterUtils.isUrlCodePoint;
+import static java.util.function.Predicate.not;
 
 import com.google.common.collect.ImmutableList;
 import com.tylerkindy.url.Host.Domain;
-import com.tylerkindy.url.Idna.IdnaProcessResult;
 import com.tylerkindy.url.Idna.ToAsciiParams;
 import com.tylerkindy.url.IpAddress.Ipv4Address;
 import com.tylerkindy.url.IpAddress.Ipv6Address;
@@ -290,23 +290,25 @@ final class HostParser {
       boolean beStrict,
       List<ValidationError> errors
   ) {
-
-
-      IdnaProcessResult result = Idna.toAscii(domain, ToAsciiParams.builder()
+    Optional<String> maybeResult = Idna.toAscii(
+        domain,
+        ToAsciiParams
+          .builder()
           .setUseStd3AsciiRules(beStrict)
           .setCheckHyphens(false)
           .setCheckBidi(true)
           .setCheckJoiners(true)
           .setTransitionalProcessing(false)
           .setVerifyDnsLength(beStrict)
-          .build());
+          .build()
+    )
+        .filter(not(String::isEmpty));
 
-      if (result.error() || result.domain().isEmpty()) {
-        errors.add(new DomainToAscii());
-        return Optional.empty();
-      }
+    if (maybeResult.isEmpty()) {
+      errors.add(new DomainToAscii());
+    }
 
-    return Optional.of(result.domain());
+    return maybeResult;
   }
 
   private static boolean endsInANumber(String asciiDomain) {
