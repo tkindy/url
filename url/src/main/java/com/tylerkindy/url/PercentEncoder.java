@@ -97,7 +97,7 @@ final class PercentEncoder {
       if (percentEncodeSet.contains(isomorph)) {
         output
             .append('%')
-            .append(Integer.toHexString(isomorph).toUpperCase());
+            .append(String.format("%02x", isomorph).toUpperCase());
       } else {
         output.appendCodePoint(isomorph);
       }
