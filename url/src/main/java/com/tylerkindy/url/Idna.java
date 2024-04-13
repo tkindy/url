@@ -90,6 +90,7 @@ final class Idna {
     String normalized = normalize(mapped);
     return convertAndValidate(
         normalized,
+        useStd3AsciiRules,
         checkHyphens,
         transitionalProcessing,
         ignoreInvalidPunycode
@@ -152,6 +153,7 @@ final class Idna {
 
   private static IdnaProcessResult convertAndValidate(
       String normalized,
+      boolean useStd3AsciiRules,
       boolean checkHyphens,
       boolean transitionalProcessing,
       boolean ignoreInvalidPunycode
@@ -189,12 +191,12 @@ final class Idna {
           }
         }
 
-        if (!isValid(label, false, checkHyphens)) {
+        if (!isValid(label, useStd3AsciiRules, false, checkHyphens)) {
           error = true;
         }
 
       } else {
-        if (!isValid(label, transitionalProcessing, checkHyphens)) {
+        if (!isValid(label, useStd3AsciiRules, transitionalProcessing, checkHyphens)) {
           error = true;
         }
       }
@@ -207,6 +209,7 @@ final class Idna {
 
   private static boolean isValid(
       String label,
+      boolean useStd3AsciiRules,
       boolean transitionalProcessing,
       boolean checkHyphens
   ) {
@@ -247,7 +250,8 @@ final class Idna {
           return false;
         }
       } else {
-        if (!(status == Status.VALID || status == Status.DEVIATION)) {
+        if (!(status == Status.VALID || status == Status.DEVIATION ||
+            (!useStd3AsciiRules && status == Status.DISALLOWED_STD3_VALID))) {
           return false;
         }
       }
