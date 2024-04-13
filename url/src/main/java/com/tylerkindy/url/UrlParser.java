@@ -673,11 +673,7 @@ final class UrlParser {
         break;
       }
 
-      if (codePoint <= 0xFFFF) {
-        prefixEndIndex += 1;
-      } else {
-        prefixEndIndex += 2;
-      }
+      prefixEndIndex += Character.charCount(codePoint);
     }
 
     int suffixStartIndex = urlStr.length();
@@ -687,11 +683,7 @@ final class UrlParser {
         break;
       }
 
-      if (codePoint <= 0xFFFF) {
-        suffixStartIndex -= 1;
-      } else {
-        suffixStartIndex -= 2;
-      }
+      suffixStartIndex -= Character.charCount(codePoint);
     }
 
     if (prefixEndIndex > 0 || suffixStartIndex < urlStr.length() - 1) {
