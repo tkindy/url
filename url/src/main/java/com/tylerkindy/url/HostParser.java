@@ -275,10 +275,23 @@ final class HostParser {
         .forEach(codePoint -> errors.add(new InvalidUrlUnit(Character.toString(codePoint))));
 
     for (int i = 0; i < input.length(); i++) {
-      if (input.codePointAt(i) == '%' &&
-          !(isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 1))) &&
-              isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 2))))) {
-        errors.add(new InvalidUrlUnit("Unexpected %"));
+      if (input.codePointAt(i) == '%') {
+        boolean isNotFollowedByTwoCodePoints =
+            input.codePointCount(
+                i + 1,
+                // 2 code points can take up to 4 chars
+                Math.min(i + 1 + 4, input.length())
+            ) < 2;
+
+        if (
+            isNotFollowedByTwoCodePoints ||
+                !(
+                    isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 1))) &&
+                        isAsciiHexDigit(input.codePointAt(input.offsetByCodePoints(i, 2)))
+                )
+        ) {
+          errors.add(new InvalidUrlUnit("Unexpected %"));
+        }
       }
     }
 
