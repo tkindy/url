@@ -191,7 +191,16 @@ final class Pointer {
     codePointIndex = 0;
     codeUnitIndex = 0;
   }
-  
+
+  @Override
+  public String toString() {
+    return switch (pointedAt()) {
+      case CodePoint(var c) -> "'" + Character.toString(c) + "'";
+      case Eof eof -> "EOF";
+      case Nowhere nowhere -> "Nowhere";
+    };
+  }
+
   @FunctionalInterface
   private interface IndexUpdater {
     int update(int index, int amount);
