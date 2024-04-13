@@ -118,7 +118,7 @@ class UrlTest {
     return urlStrings
         .stream()
         .map(urlString -> dynamicTest(urlString, () -> {
-          UrlParseResult result = Url.parse(urlString);
+          UrlParseResult result = Url.parse(urlString.replaceAll("\\\\n", "\n"));
 
           assertThat(result)
               .withFailMessage(() -> "Expected '%s' to parse, but got %s".formatted(
