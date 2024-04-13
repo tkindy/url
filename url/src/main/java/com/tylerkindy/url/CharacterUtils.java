@@ -82,7 +82,7 @@ final class CharacterUtils {
   }
 
   public static boolean isAsciiTabOrNewline(int c) {
-    return c == '\t' || c == '\f' || c == '\r' || c == '\n';
+    return c == '\t' || c == '\r' || c == '\n';
   }
 
   public static boolean isWindowsDriveLetter(String s) {
