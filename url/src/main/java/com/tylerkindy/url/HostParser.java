@@ -312,7 +312,7 @@ final class HostParser {
   }
 
   private static boolean endsInANumber(String asciiDomain) {
-    List<String> parts = Arrays.asList(asciiDomain.split("\\."));
+    List<String> parts = new ArrayList<>(Arrays.asList(asciiDomain.split("\\.", -1)));
     if (parts.getLast().isEmpty()) {
       if (parts.size() == 1) {
         return false;

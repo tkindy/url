@@ -46,7 +46,7 @@ final class Idna {
       return Optional.empty();
     }
 
-    String[] labels = result.domain().split("\\.");
+    String[] labels = result.domain().split("\\.", -1);
     for (int i = 0; i < labels.length; i++) {
       String label = labels[i];
       if (label.codePoints().anyMatch(codePoint -> !isAscii(codePoint))) {
@@ -156,7 +156,7 @@ final class Idna {
       boolean transitionalProcessing,
       boolean ignoreInvalidPunycode
   ) {
-    String[] labels = normalized.split("\\.");
+    String[] labels = normalized.split("\\.", -1);
 
     boolean error = false;
     StringBuilder validatedBuilder = new StringBuilder(normalized.length());
