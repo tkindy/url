@@ -434,10 +434,14 @@ final class HostParser {
       return Optional.empty();
     }
 
-    return Optional.of(new Ipv4NumberParseResult(
-        Integer.parseInt(input, radix),
-        validationError
-    ));
+    int number;
+    try {
+      number = Integer.parseInt(input, radix);
+    } catch (NumberFormatException e) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new Ipv4NumberParseResult(number, validationError));
   }
 
   private static <T> List<T> repeat(T t, int count) {
