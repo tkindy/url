@@ -21,7 +21,7 @@ import static com.tylerkindy.url.CharacterUtils.isAsciiAlpha;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
 import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
-import com.tylerkindy.url.Pointer.PrefixPattern.AsciiDigit;
+import com.tylerkindy.url.Pointer.PrefixPattern.AsciiHexDigit;
 import com.tylerkindy.url.Pointer.PrefixPattern.Literal;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
@@ -147,7 +147,7 @@ final class Pointer {
       if (prefixChar == '%') {
         char patternChar = prefix.charAt(i + 1);
         prefixPattern = switch (patternChar) {
-          case 'd' -> new AsciiDigit();
+          case 'd' -> new AsciiHexDigit();
           default -> throw new IllegalArgumentException("Unexpected prefix pattern char: " + patternChar);
         };
       } else {
@@ -200,12 +200,12 @@ final class Pointer {
   sealed interface PrefixPattern {
     default boolean matches(char c) {
       return switch (this) {
-        case AsciiDigit ad -> c >= '0' && c <= '9';
+        case AsciiHexDigit ahd -> CharacterUtils.isAsciiHexDigit(c);
         case Literal(var l) -> c == l;
       };
     }
 
-    record AsciiDigit() implements PrefixPattern {}
+    record AsciiHexDigit() implements PrefixPattern {}
     record Literal(char c) implements PrefixPattern {}
   }
 
