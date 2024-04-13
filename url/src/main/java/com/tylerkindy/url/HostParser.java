@@ -436,7 +436,7 @@ final class HostParser {
 
     int number;
     try {
-      number = Integer.parseInt(input, radix);
+      number = Integer.parseUnsignedInt(input, radix);
     } catch (NumberFormatException e) {
       return Optional.empty();
     }
