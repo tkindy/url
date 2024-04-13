@@ -88,6 +88,11 @@ public sealed interface IpAddress {
         }
       }
 
+      if (current > longest) {
+        longest = current;
+        longestIndex = pieces.size() - current;
+      }
+
       if (longestIndex == -1 || longest == 1) {
         return Optional.empty();
       }
