@@ -19,9 +19,13 @@ package com.tylerkindy.url;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+import com.google.common.io.Resources;
 import com.tylerkindy.url.testdata.TestCase.Failure;
 import com.tylerkindy.url.testdata.TestCase.Success;
 import com.tylerkindy.url.testdata.TestCaseReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.assertj.core.api.Fail;
@@ -97,5 +101,31 @@ class UrlTest {
 
               throw new IllegalStateException("Unknown TestCase class: " + testCase);
             });
+  }
+
+  @TestFactory
+  Stream<DynamicTest> top100UrlsTests() {
+    List<String> urlStrings;
+    try {
+      urlStrings = Resources.readLines(
+          Resources.getResource("top100.txt"),
+          StandardCharsets.UTF_8
+      );
+    } catch (IOException e) {
+      throw new RuntimeException("Error reading top100.txt", e);
+    }
+
+    return urlStrings
+        .stream()
+        .map(urlString -> dynamicTest(urlString, () -> {
+          UrlParseResult result = Url.parse(urlString);
+
+          assertThat(result)
+              .withFailMessage(() -> "Expected '%s' to parse, but got %s".formatted(
+                  urlString,
+                  result
+              ))
+              .isInstanceOf(UrlParseResult.Success.class);
+        }));
   }
 }
