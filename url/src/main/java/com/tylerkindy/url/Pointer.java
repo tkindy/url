@@ -163,7 +163,7 @@ final class Pointer {
   }
 
   public boolean doesRemainingStartWithWindowsDriveLetter() {
-    int remainingLength = s.length() - codeUnitIndex - 1;
+    int remainingLength = s.length() - codeUnitIndex;
     if (remainingLength < 2) {
       return false;
     }
