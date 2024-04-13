@@ -345,7 +345,14 @@ final class UrlParser {
                   (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
           ) {
             if (!buffer.isEmpty()) {
-              int portInt = Integer.parseInt(buffer.toString());
+              int portInt;
+              try {
+                portInt = Integer.parseInt(buffer.toString());
+              } catch (NumberFormatException e) {
+                errors.add(new PortOutOfRange());
+                return new Failure(errors);
+              }
+
               if (portInt > Character.MAX_VALUE) {
                 errors.add(new PortOutOfRange());
                 return new Failure(errors);
