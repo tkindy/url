@@ -443,7 +443,7 @@ final class UrlParser {
                 String baseFirstPathSegment = ((NonOpaque) b.path()).segments().getFirst();
 
                 if (isNormalizedWindowsDriveLetter(baseFirstPathSegment)) {
-                  path.append(baseFirstPathSegment);
+                  path = path.append(baseFirstPathSegment);
                 }
               }
             }
