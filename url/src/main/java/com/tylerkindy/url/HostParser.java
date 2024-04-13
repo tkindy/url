@@ -343,7 +343,11 @@ final class HostParser {
       return true;
     }
 
-    return parseIpv4Number(last).isPresent();
+    return (last.startsWith("0X") || last.startsWith("0x")) &&
+        last
+            .substring(2)
+            .codePoints()
+            .allMatch(CharacterUtils::isAsciiHexDigit);
   }
 
   private static Optional<Ipv4Address> parseIpv4(String input, List<ValidationError> errors) {
