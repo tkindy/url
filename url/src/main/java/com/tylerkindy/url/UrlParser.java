@@ -409,7 +409,7 @@ final class UrlParser {
                 query = null;
 
                 if (!pointer.doesRemainingStartWithWindowsDriveLetter()) {
-                  path = path.shorten();
+                  path = path.shorten(scheme);
                 } else {
                   errors.add(new FileInvalidWindowsDriveLetter());
                   path = new NonOpaque(List.of());
@@ -534,7 +534,7 @@ final class UrlParser {
                 curBuffer.equalsIgnoreCase(".%2e") ||
                 curBuffer.equalsIgnoreCase("%2e.") ||
                 curBuffer.equalsIgnoreCase("%2e%2e")) {
-              path = path.shorten();
+              path = path.shorten(scheme);
 
               if (
                   !(pointedAt instanceof CodePoint(var cp) && cp == '/') &&

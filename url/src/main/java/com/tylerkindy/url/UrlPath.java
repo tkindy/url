@@ -28,10 +28,19 @@ public sealed interface UrlPath {
     };
   }
 
-  default UrlPath shorten() {
+  default UrlPath shorten(String scheme) {
     return switch (this) {
       case Opaque o -> throw new AssertionError("Cannot shorten an opaque path");
-      case NonOpaque(var segments) -> segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
+      case NonOpaque(var segments) -> {
+        if (
+            scheme.equals("file") &&
+                segments.size() == 1 &&
+                CharacterUtils.isNormalizedWindowsDriveLetter(segments.getFirst())
+        ) {
+          yield this;
+        }
+        yield segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
+      }
     };
   }
 
