@@ -194,11 +194,17 @@ final class Pointer {
 
   @Override
   public String toString() {
-    return switch (pointedAt()) {
-      case CodePoint(var c) -> "'" + Character.toString(c) + "'";
-      case Eof eof -> "EOF";
-      case Nowhere nowhere -> "Nowhere";
-    };
+    PointedAt pointedAt = pointedAt();
+    if (pointedAt instanceof CodePoint cp) {
+      return "'" + Character.toString(cp.codePoint()) + "'";
+    }
+    if (pointedAt instanceof Eof) {
+      return "EOF";
+    }
+    if (pointedAt instanceof Nowhere) {
+      return "Nowhere";
+    }
+    throw new IllegalStateException("Unknown PointedAt class: " + pointedAt);
   }
 
   @FunctionalInterface
@@ -207,15 +213,21 @@ final class Pointer {
   }
 
   sealed interface PrefixPattern {
-    default boolean matches(char c) {
-      return switch (this) {
-        case AsciiHexDigit ahd -> CharacterUtils.isAsciiHexDigit(c);
-        case Literal(var l) -> c == l;
-      };
+    boolean matches(char c);
+
+    record AsciiHexDigit() implements PrefixPattern {
+      @Override
+      public boolean matches(char c) {
+        return CharacterUtils.isAsciiHexDigit(c);
+      }
     }
 
-    record AsciiHexDigit() implements PrefixPattern {}
-    record Literal(char c) implements PrefixPattern {}
+    record Literal(char c) implements PrefixPattern {
+      @Override
+      public boolean matches(char c) {
+        return c == this.c;
+      }
+    }
   }
 
   public sealed interface PointedAt {

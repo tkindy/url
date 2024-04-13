@@ -21,50 +21,67 @@ import java.util.ArrayList;
 import java.util.List;
 
 public sealed interface UrlPath {
-  default UrlPath copy() {
-    return switch (this) {
-      case Opaque o -> o;
-      case NonOpaque(var segments) -> new NonOpaque(new ArrayList<>(segments));
-    };
-  }
-
-  default UrlPath shorten(String scheme) {
-    return switch (this) {
-      case Opaque o -> throw new AssertionError("Cannot shorten an opaque path");
-      case NonOpaque(var segments) -> {
-        if (
-            scheme.equals("file") &&
-                segments.size() == 1 &&
-                CharacterUtils.isNormalizedWindowsDriveLetter(segments.getFirst())
-        ) {
-          yield this;
-        }
-        yield segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
-      }
-    };
-  }
-
-  default UrlPath append(String segment) {
-    return switch (this) {
-      case Opaque(var s) -> new Opaque(s + segment);
-      case NonOpaque(var segments) -> new NonOpaque(ImmutableList.<String>builder().addAll(segments).add(segment).build());
-    };
-  }
-
-  default boolean isEmpty() {
-    return switch (this) {
-      case Opaque o -> throw new AssertionError("Opaque paths have no concept of empty");
-      case NonOpaque(var segments) -> segments.isEmpty();
-    };
-  }
+  UrlPath copy();
+  UrlPath shorten(String scheme);
+  UrlPath append(String segment);
+  boolean isEmpty();
 
   record Opaque(String segment) implements UrlPath {
+    @Override
+    public UrlPath copy() {
+      return this;
+    }
+
+    @Override
+    public UrlPath shorten(String scheme) {
+      throw new AssertionError("Cannot shorten an opaque path");
+    }
+
+    @Override
+    public UrlPath append(String segment) {
+      return new Opaque(this.segment + segment);
+    }
+
+    @Override
+    public boolean isEmpty() {
+      throw new AssertionError("Opaque paths have no concept of empty");
+    }
+
     @Override
     public String toString() {
       return segment;
     }
   }
+
   record NonOpaque(List<String> segments) implements UrlPath {
+
+    @Override
+    public UrlPath copy() {
+      return new NonOpaque(new ArrayList<>(segments));
+    }
+
+    @Override
+    public UrlPath shorten(String scheme) {
+      if (
+          scheme.equals("file") &&
+              segments.size() == 1 &&
+              CharacterUtils.isNormalizedWindowsDriveLetter(segments.get(0))
+      ) {
+        return this;
+      }
+      return segments.isEmpty() ? this : new NonOpaque(segments.subList(0, segments.size() - 1));
+    }
+
+    @Override
+    public UrlPath append(String segment) {
+      return new NonOpaque(ImmutableList.<String>builder().addAll(segments).add(segment).build());
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return segments.isEmpty();
+    }
+
     @Override
     public String toString() {
       StringBuilder output = new StringBuilder();

@@ -32,7 +32,6 @@ import com.tylerkindy.url.Host.Empty;
 import com.tylerkindy.url.Pointer.PointedAt;
 import com.tylerkindy.url.Pointer.PointedAt.CodePoint;
 import com.tylerkindy.url.Pointer.PointedAt.Eof;
-import com.tylerkindy.url.Pointer.PointedAt.Nowhere;
 import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlPath.NonOpaque;
@@ -92,58 +91,57 @@ final class UrlParser {
     while (true) {
       switch (state) {
         case SCHEME_START -> {
-          switch (pointer.pointedAt()) {
-            case CodePoint(var c) when isAsciiAlpha(c) -> {
-              buffer.appendCodePoint(Character.toLowerCase(c));
-              state = State.SCHEME;
-            }
-            default -> {
-              state = State.NO_SCHEME;
-              pointer.decrease();
-            }
+          if (pointer.pointedAt() instanceof CodePoint cp && isAsciiAlpha(cp.codePoint())) {
+            buffer.appendCodePoint(Character.toLowerCase(cp.codePoint()));
+            state = State.SCHEME;
+          } else {
+            state = State.NO_SCHEME;
+            pointer.decrease();
           }
         }
         case SCHEME -> {
-          switch (pointer.pointedAt()) {
-            case CodePoint(var c) when isAsciiAlphanumeric(c) || c == '+' || c == '-' || c == '.' -> {
-              buffer.appendCodePoint(Character.toLowerCase(c));
-            }
-            case CodePoint(var c) when c == ':' -> {
-              scheme = buffer.toString();
-              buffer.delete(0, buffer.length());
+          PointedAt pointedAt = pointer.pointedAt();
+          if (pointedAt instanceof CodePoint cp && (
+              isAsciiAlphanumeric(cp.codePoint()) ||
+                  cp.codePoint() == '+' ||
+                  cp.codePoint() == '-' ||
+                  cp.codePoint() == '.'
+          )) {
+            buffer.appendCodePoint(Character.toLowerCase(cp.codePoint()));
+          } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == ':') {
+            scheme = buffer.toString();
+            buffer.delete(0, buffer.length());
 
-              if (scheme.equals("file")) {
-                if (!pointer.doesRemainingStartWith("//")) {
-                  errors.add(new SpecialSchemeMissingFollowingSolidus());
-                }
-                state = State.FILE;
-              } else if (SPECIAL_SCHEMES.contains(scheme)
-                  && base.map(Url::scheme).filter(isEqual(scheme)).isPresent()) {
-                state = State.SPECIAL_RELATIVE_OR_AUTHORITY;
-              } else if (SPECIAL_SCHEMES.contains(scheme)) {
-                state = State.SPECIAL_AUTHORITY_SLASHES;
-              } else if (pointer.doesRemainingStartWith("/")) {
-                state = State.PATH_OR_AUTHORITY;
-                pointer.increase();
-              } else {
-                path = new Opaque("");
-                state = State.OPAQUE_PATH;
+            if (scheme.equals("file")) {
+              if (!pointer.doesRemainingStartWith("//")) {
+                errors.add(new SpecialSchemeMissingFollowingSolidus());
               }
+              state = State.FILE;
+            } else if (SPECIAL_SCHEMES.contains(scheme)
+                && base.map(Url::scheme).filter(isEqual(scheme)).isPresent()) {
+              state = State.SPECIAL_RELATIVE_OR_AUTHORITY;
+            } else if (SPECIAL_SCHEMES.contains(scheme)) {
+              state = State.SPECIAL_AUTHORITY_SLASHES;
+            } else if (pointer.doesRemainingStartWith("/")) {
+              state = State.PATH_OR_AUTHORITY;
+              pointer.increase();
+            } else {
+              path = new Opaque("");
+              state = State.OPAQUE_PATH;
             }
-            default -> {
-              buffer.delete(0, buffer.length());
-              state = State.NO_SCHEME;
-              pointer.reset();
-              pointer.decrease();
-            }
+          } else {
+            buffer.delete(0, buffer.length());
+            state = State.NO_SCHEME;
+            pointer.reset();
+            pointer.decrease();
           }
         }
         case NO_SCHEME -> {
           if (base.isEmpty()
-              || (base.get().path() instanceof Opaque && !(pointer.pointedAt() instanceof CodePoint(var c) && c == '#'))) {
+              || (base.get().path() instanceof Opaque && !(pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '#'))) {
             errors.add(new MissingSchemeNonRelativeUrl());
             return new Failure(errors);
-          } else if (base.get().path() instanceof Opaque && pointer.pointedAt() instanceof CodePoint(var c) && c == '#') {
+          } else if (base.get().path() instanceof Opaque && pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '#') {
             scheme = base.get().scheme();
             path = base.get().path();
             query = base.get().query().map(StringBuilder::new).orElse(null);
@@ -158,7 +156,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_RELATIVE_OR_AUTHORITY -> {
-          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/' && pointer.doesRemainingStartWith("/")) {
+          if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '/' && pointer.doesRemainingStartWith("/")) {
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
             pointer.increase();
           } else {
@@ -168,7 +166,7 @@ final class UrlParser {
           }
         }
         case PATH_OR_AUTHORITY -> {
-          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
+          if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '/') {
             state = State.AUTHORITY;
           } else {
             state = State.PATH;
@@ -177,9 +175,9 @@ final class UrlParser {
         }
         case RELATIVE -> {
           scheme = base.get().scheme();
-          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
+          if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '/') {
             state = State.RELATIVE_SLASH;
-          } else if (SPECIAL_SCHEMES.contains(scheme) && pointer.pointedAt() instanceof CodePoint(var c) && c == '\\') {
+          } else if (SPECIAL_SCHEMES.contains(scheme) && pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '\\') {
             errors.add(new InvalidReverseSolidus());
             state = State.RELATIVE_SLASH;
           } else {
@@ -190,36 +188,33 @@ final class UrlParser {
             path = base.get().path().copy();
             query = base.get().query().map(StringBuilder::new).orElse(null);
 
-            switch (pointer.pointedAt()) {
-              case CodePoint(var c) when c == '?' -> {
-                query = new StringBuilder();
-                state = State.QUERY;
-              }
-              case CodePoint(var c) when c == '#' -> {
-                fragment = new StringBuilder();
-                state = State.FRAGMENT;
-              }
-              case CodePoint(var c) -> {
-                query = null;
+            PointedAt pointedAt = pointer.pointedAt();
+            if (pointedAt instanceof CodePoint cp && cp.codePoint() == '?') {
+              query = new StringBuilder();
+              state = State.QUERY;
+            } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == '#') {
+              fragment = new StringBuilder();
+              state = State.FRAGMENT;
+            } else if (pointedAt instanceof CodePoint cp) {
+              var c = cp.codePoint();
+              query = null;
 
-                if (path instanceof NonOpaque(var segments) && !segments.isEmpty()) {
-                  path = new NonOpaque(segments.subList(0, segments.size() - 1));
-                }
-
-                state = State.PATH;
-                pointer.decrease();
+              if (path instanceof NonOpaque no && !no.segments().isEmpty()) {
+                path = new NonOpaque(no.segments().subList(0, no.segments().size() - 1));
               }
-              default -> {}
+
+              state = State.PATH;
+              pointer.decrease();
             }
           }
         }
         case RELATIVE_SLASH -> {
-          if (SPECIAL_SCHEMES.contains(scheme) && (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
-            if (c == '\\') {
+          if (SPECIAL_SCHEMES.contains(scheme) && (pointer.pointedAt() instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '\\'))) {
+            if (cp.codePoint() == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
-          } else if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/') {
+          } else if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '/') {
             state = State.AUTHORITY;
           } else {
             username = new StringBuilder(base.get().username());
@@ -231,7 +226,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_AUTHORITY_SLASHES -> {
-          if (pointer.pointedAt() instanceof CodePoint(var c) && c == '/' && pointer.doesRemainingStartWith("/")) {
+          if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '/' && pointer.doesRemainingStartWith("/")) {
             state = State.SPECIAL_AUTHORITY_IGNORE_SLASHES;
             pointer.increase();
           } else {
@@ -241,7 +236,7 @@ final class UrlParser {
           }
         }
         case SPECIAL_AUTHORITY_IGNORE_SLASHES -> {
-          if (!(pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
+          if (!(pointer.pointedAt() instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '\\'))) {
             state = State.AUTHORITY;
             pointer.decrease();
           } else {
@@ -251,7 +246,7 @@ final class UrlParser {
         case AUTHORITY -> {
           PointedAt pointedAt = pointer.pointedAt();
 
-          if (pointedAt instanceof CodePoint(var c) && c == '@') {
+          if (pointedAt instanceof CodePoint cp && cp.codePoint() == '@') {
             errors.add(new InvalidCredentials());
             if (atSignSeen) {
               buffer.insert(0, "%40");
@@ -274,8 +269,8 @@ final class UrlParser {
 
             buffer.delete(0, buffer.length());
           } else if (
-              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '?' || cp.codePoint() == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp && cp.codePoint() == '\\')
           ) {
             if (atSignSeen && buffer.isEmpty()) {
               errors.add(new HostMissing());
@@ -285,8 +280,8 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.HOST;
           } else {
-            if (pointedAt instanceof CodePoint(var c)) {
-              buffer.appendCodePoint(c);
+            if (pointedAt instanceof CodePoint cp) {
+              buffer.appendCodePoint(cp.codePoint());
             } else {
               throw new IllegalStateException("Expected code point");
             }
@@ -295,7 +290,7 @@ final class UrlParser {
         case HOST, HOSTNAME -> {
           PointedAt pointedAt = pointer.pointedAt();
 
-          if (pointedAt instanceof CodePoint(var c) && c == ':' && !insideBrackets) {
+          if (pointedAt instanceof CodePoint cp && cp.codePoint() == ':' && !insideBrackets) {
             if (buffer.isEmpty()) {
               errors.add(new HostMissing());
               return new Failure(errors);
@@ -308,8 +303,8 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.PORT;
           } else if (
-              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '?' || cp.codePoint() == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp && cp.codePoint() == '\\')
           ) {
             pointer.decrease();
             if (SPECIAL_SCHEMES.contains(scheme) && buffer.isEmpty()) {
@@ -324,7 +319,8 @@ final class UrlParser {
             buffer.delete(0, buffer.length());
             state = State.PATH_START;
           } else {
-            if (pointedAt instanceof CodePoint(var c)) {
+            if (pointedAt instanceof CodePoint cp) {
+              var c = cp.codePoint();
               if (c == '[') {
                 insideBrackets = true;
               }
@@ -338,11 +334,11 @@ final class UrlParser {
         case PORT -> {
           PointedAt pointedAt = pointer.pointedAt();
 
-          if (pointedAt instanceof CodePoint(var c) && isAsciiDigit(c)) {
-            buffer.appendCodePoint(c);
+          if (pointedAt instanceof CodePoint cp && isAsciiDigit(cp.codePoint())) {
+            buffer.appendCodePoint(cp.codePoint());
           } else if (
-              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && (c == '/' || c == '?' || c == '#'))) ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '?' || cp.codePoint() == '#'))) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp && cp.codePoint() == '\\')
           ) {
             if (!buffer.isEmpty()) {
               int portInt;
@@ -384,8 +380,8 @@ final class UrlParser {
           scheme = "file";
           host = new Empty();
 
-          if (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\')) {
-            if (c == '\\') {
+          if (pointer.pointedAt() instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '\\')) {
+            if (cp.codePoint() == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.FILE_SLASH;
@@ -396,30 +392,26 @@ final class UrlParser {
             path = b.path().copy();
             query = b.query().map(StringBuilder::new).orElse(null);
 
-            switch (pointer.pointedAt()) {
-              case CodePoint(var c) when c == '?' -> {
-                query = new StringBuilder();
-                state = State.QUERY;
-              }
-              case CodePoint(var c) when c == '#' -> {
-                fragment = new StringBuilder();
-                state = State.FRAGMENT;
-              }
-              case CodePoint(var c) -> {
-                query = null;
+            PointedAt pointedAt = pointer.pointedAt();
+            if (pointedAt instanceof CodePoint cp && cp.codePoint() == '?') {
+              query = new StringBuilder();
+              state = State.QUERY;
+            } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == '#') {
+              fragment = new StringBuilder();
+              state = State.FRAGMENT;
+            } else if (pointedAt instanceof CodePoint cp) {
+              var c = cp.codePoint();
+              query = null;
 
-                if (!pointer.doesRemainingStartWithWindowsDriveLetter()) {
-                  path = path.shorten(scheme);
-                } else {
-                  errors.add(new FileInvalidWindowsDriveLetter());
-                  path = new NonOpaque(List.of());
-                }
-
-                state = State.PATH;
-                pointer.decrease();
+              if (!pointer.doesRemainingStartWithWindowsDriveLetter()) {
+                path = path.shorten(scheme);
+              } else {
+                errors.add(new FileInvalidWindowsDriveLetter());
+                path = new NonOpaque(List.of());
               }
-              case Eof() -> {}
-              case Nowhere() -> {}
+
+              state = State.PATH;
+              pointer.decrease();
             }
           } else {
             state = State.PATH;
@@ -427,8 +419,8 @@ final class UrlParser {
           }
         }
         case FILE_SLASH -> {
-          if (pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\')) {
-            if (c == '\\') {
+          if (pointer.pointedAt() instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '\\')) {
+            if (cp.codePoint() == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.FILE_HOST;
@@ -440,7 +432,7 @@ final class UrlParser {
               if (
                   !pointer.doesRemainingStartWithWindowsDriveLetter()
               ) {
-                String baseFirstPathSegment = ((NonOpaque) b.path()).segments().getFirst();
+                String baseFirstPathSegment = ((NonOpaque) b.path()).segments().get(0);
 
                 if (isNormalizedWindowsDriveLetter(baseFirstPathSegment)) {
                   path = path.append(baseFirstPathSegment);
@@ -456,8 +448,8 @@ final class UrlParser {
 
           if (
               pointedAt instanceof Eof ||
-                  (pointedAt instanceof CodePoint(var c) &&
-                      (c == '/' || c == '\\' || c == '?' || c == '#'))
+                  (pointedAt instanceof CodePoint cp &&
+                      (cp.codePoint() == '/' || cp.codePoint() == '\\' || cp.codePoint() == '?' || cp.codePoint() == '#'))
           ) {
             pointer.decrease();
 
@@ -475,7 +467,7 @@ final class UrlParser {
 
               Host host1 = maybeHost.get();
 
-              if (host1 instanceof Domain(var domain) && domain.equals("localhost")) {
+              if (host1 instanceof Domain d && d.domain().equals("localhost")) {
                 host1 = new Empty();
               }
 
@@ -489,43 +481,38 @@ final class UrlParser {
         }
         case PATH_START -> {
           if (SPECIAL_SCHEMES.contains(scheme)) {
-            if (pointer.pointedAt() instanceof CodePoint(var c) && c == '\\') {
+            if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
             state = State.PATH;
 
-            if (!(pointer.pointedAt() instanceof CodePoint(var c) && (c == '/' || c == '\\'))) {
+            if (!(pointer.pointedAt() instanceof CodePoint cp && (cp.codePoint() == '/' || cp.codePoint() == '\\'))) {
               pointer.decrease();
             }
           } else {
-            switch (pointer.pointedAt()) {
-              case CodePoint(var c) when c == '?' -> {
-                query = new StringBuilder();
-                state = State.QUERY;
+            PointedAt pointedAt = pointer.pointedAt();
+            if (pointedAt instanceof CodePoint cp && cp.codePoint() == '?') {
+              query = new StringBuilder();
+              state = State.QUERY;
+            } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == '#') {
+              fragment = new StringBuilder();
+              state = State.FRAGMENT;
+            } else if (pointedAt instanceof CodePoint cp) {
+              state = State.PATH;
+              if (cp.codePoint() != '/') {
+                pointer.decrease();
               }
-              case CodePoint(var c) when c == '#' -> {
-                fragment = new StringBuilder();
-                state = State.FRAGMENT;
-              }
-              case CodePoint(var c) -> {
-                state = State.PATH;
-                if (c != '/') {
-                  pointer.decrease();
-                }
-              }
-              case Eof() -> {}
-              case Nowhere() -> {}
             }
           }
         }
         case PATH -> {
           PointedAt pointedAt = pointer.pointedAt();
           if (
-              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && c == '/')) ||
-                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\') ||
-                  (pointedAt instanceof CodePoint(var c) && (c == '?' || c == '#'))
+              (pointedAt instanceof Eof || (pointedAt instanceof CodePoint cp && cp.codePoint() == '/')) ||
+                  (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp && cp.codePoint() == '\\') ||
+                  (pointedAt instanceof CodePoint cp1 && (cp1.codePoint() == '?' || cp1.codePoint() == '#'))
           ) {
-            if (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\') {
+            if (SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp && cp.codePoint() == '\\') {
               errors.add(new InvalidReverseSolidus());
             }
 
@@ -537,23 +524,23 @@ final class UrlParser {
               path = path.shorten(scheme);
 
               if (
-                  !(pointedAt instanceof CodePoint(var cp) && cp == '/') &&
-                      !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+                  !(pointedAt instanceof CodePoint cp && cp.codePoint() == '/') &&
+                      !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp1 && cp1.codePoint() == '\\')
               ) {
                 path = path.append("");
               }
             } else if (
                 (curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e")) &&
-                    !(pointedAt instanceof CodePoint(var c) && c == '/') &&
-                    !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint(var c) && c == '\\')
+                    !(pointedAt instanceof CodePoint cp && cp.codePoint() == '/') &&
+                    !(SPECIAL_SCHEMES.contains(scheme) && pointedAt instanceof CodePoint cp1 && cp1.codePoint() == '\\')
 
             ) {
               path = path.append("");
             } else if (!(curBuffer.equals(".") || curBuffer.equalsIgnoreCase("%2e"))) {
               if (
                   scheme.equals("file") &&
-                      path instanceof NonOpaque(var segments) &&
-                      segments.isEmpty() &&
+                      path instanceof NonOpaque no &&
+                      no.segments().isEmpty() &&
                       isWindowsDriveLetter(curBuffer)
               ) {
                 buffer.setCharAt(1, ':');
@@ -564,22 +551,20 @@ final class UrlParser {
 
             buffer.delete(0, buffer.length());
 
-            switch (pointedAt) {
-              case CodePoint(var c) when c == '?' -> {
-                query = new StringBuilder();
-                state = State.QUERY;
-              }
-              case CodePoint(var c) when c == '#' -> {
-                fragment = new StringBuilder();
-                state = State.FRAGMENT;
-              }
-              default -> {}
+            if (pointedAt instanceof CodePoint cp && cp.codePoint() == '?') {
+              query = new StringBuilder();
+              state = State.QUERY;
+            } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == '#') {
+              fragment = new StringBuilder();
+              state = State.FRAGMENT;
             }
           } else {
-            int c = switch (pointedAt) {
-              case CodePoint(var cp) -> cp;
-              default -> throw new IllegalStateException("Must be code point here!");
-            };
+            int c;
+            if (pointedAt instanceof CodePoint cp) {
+              c = cp.codePoint();
+            } else {
+              throw new IllegalStateException("Must be code point here!");
+            }
             if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
@@ -592,33 +577,28 @@ final class UrlParser {
         }
         case OPAQUE_PATH -> {
           PointedAt pointedAt = pointer.pointedAt();
-
-          switch (pointedAt) {
-            case CodePoint(var c) when c == '?' -> {
-              query = new StringBuilder();
-              state = State.QUERY;
+          if (pointedAt instanceof CodePoint cp && cp.codePoint() == '?') {
+            query = new StringBuilder();
+            state = State.QUERY;
+          } else if (pointedAt instanceof CodePoint cp && cp.codePoint() == '#') {
+            fragment = new StringBuilder();
+            state = State.FRAGMENT;
+          } else {
+            if (pointedAt instanceof CodePoint cp && !isUrlCodePoint(cp.codePoint()) && cp.codePoint() != '%') {
+              errors.add(new InvalidUrlUnit(Character.toString(cp.codePoint())));
             }
-            case CodePoint(var c) when c == '#' -> {
-              fragment = new StringBuilder();
-              state = State.FRAGMENT;
+            if (pointedAt instanceof CodePoint cp && cp.codePoint() == '%' && !pointer.doesRemainingStartWith("%d%d")) {
+              errors.add(new InvalidUrlUnit("Unexpected %"));
             }
-            default -> {
-              if (pointedAt instanceof CodePoint(var c) && !isUrlCodePoint(c) && c != '%') {
-                errors.add(new InvalidUrlUnit(Character.toString(c)));
-              }
-              if (pointedAt instanceof CodePoint(var c) && c == '%' && !pointer.doesRemainingStartWith("%d%d")) {
-                errors.add(new InvalidUrlUnit("Unexpected %"));
-              }
-              if (pointedAt instanceof CodePoint(var c)) {
-                path = path.append(PercentEncoder.utf8PercentEncode(c, PercentEncoder.C0_CONTROL));
-              }
+            if (pointedAt instanceof CodePoint cp) {
+              path = path.append(PercentEncoder.utf8PercentEncode(cp.codePoint(), PercentEncoder.C0_CONTROL));
             }
           }
         }
         case QUERY -> {
           PointedAt pointedAt = pointer.pointedAt();
 
-          if (pointedAt instanceof Eof || (pointedAt instanceof CodePoint(var c) && c == '#')) {
+          if (pointedAt instanceof Eof || (pointedAt instanceof CodePoint cp && cp.codePoint() == '#')) {
             CharacterSet queryPercentEncodeSet =
                 SPECIAL_SCHEMES.contains(scheme) ?
                     PercentEncoder.SPECIAL_QUERY :
@@ -631,10 +611,13 @@ final class UrlParser {
               state = State.FRAGMENT;
             }
           } else {
-            int c = switch (pointedAt) {
-              case CodePoint(var cp) -> cp;
-              default -> throw new IllegalStateException("Must be code point here!");
-            };
+            int c;
+            if (pointedAt instanceof CodePoint cp) {
+              c = cp.codePoint();
+            } else {
+              throw new IllegalStateException("Must be code point here!");
+            }
+
             if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }
@@ -645,7 +628,8 @@ final class UrlParser {
           }
         }
         case FRAGMENT -> {
-          if (pointer.pointedAt() instanceof CodePoint(var c)) {
+          if (pointer.pointedAt() instanceof CodePoint cp) {
+            var c = cp.codePoint();
             if (!isUrlCodePoint(c) && c != '%') {
               errors.add(new InvalidUrlUnit(Character.toString(c)));
             }

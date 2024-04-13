@@ -19,6 +19,7 @@ package com.tylerkindy.url;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.google.common.io.Resources;
+import com.tylerkindy.url.common.CodePoints;
 import com.tylerkindy.url.common.CodePoints.Range;
 import com.tylerkindy.url.common.CodePoints.Single;
 import com.tylerkindy.url.common.MappingRow;
@@ -60,11 +61,16 @@ final class IdnaMapper {
     // TODO: binary search
     return mappingRows.stream()
         .filter(row ->
-            switch (row.codePoints()) {
-              case Single(var cp) -> cp == codePoint;
-              case Range(var low, var high) ->
-                  Integer.compareUnsigned(low, codePoint) <= 0 &&
-                  Integer.compareUnsigned(codePoint, high) <= 0;
+            {
+              CodePoints codePoints = row.codePoints();
+              if (codePoints instanceof Single s) {
+                return s.codePoint() == codePoint;
+              }
+              if (codePoints instanceof Range r) {
+                return Integer.compareUnsigned(r.lowCodePoint(), codePoint) <= 0 &&
+                    Integer.compareUnsigned(codePoint, r.highCodePoint()) <= 0;
+              }
+              throw new IllegalStateException("Unknown CodePoints class: " + codePoints);
             }
         )
         .findAny()

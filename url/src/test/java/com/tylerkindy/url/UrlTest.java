@@ -55,47 +55,47 @@ class UrlTest {
     return TestCaseReader.testCases()
         .map(
             testCase -> {
-              switch (testCase) {
-                case Success success -> {
-                  return dynamicTest(
-                      success.name(),
-                      () -> {
-                        UrlParseResult result = success
-                                .base()
-                            .map(base -> Url.parse(success.input(), Url.parseOrThrow(base)))
-                            .orElseGet(() -> Url.parse(success.input()));
+              if (testCase instanceof Success success) {
+                return dynamicTest(
+                    success.name(),
+                    () -> {
+                      UrlParseResult result = success
+                          .base()
+                          .map(base -> Url.parse(success.input(), Url.parseOrThrow(base)))
+                          .orElseGet(() -> Url.parse(success.input()));
 
-                        assertThat(result)
-                            .withFailMessage(() -> "Expected '%s', but got %s".formatted(
-                                success.href(),
-                                result
-                            ))
-                            .isInstanceOf(UrlParseResult.Success.class);
+                      assertThat(result)
+                          .withFailMessage(() -> "Expected '%s', but got %s".formatted(
+                              success.href(),
+                              result
+                          ))
+                          .isInstanceOf(UrlParseResult.Success.class);
 
-                        assertThat(((UrlParseResult.Success) result).url().toString())
-                            .isEqualTo(success.href());
-                      });
-                }
-                case Failure failure -> {
-                  return dynamicTest(
-                      failure.name(),
-                      () -> {
-                        Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
-
-                        Url parsed;
-                        try {
-                          parsed = maybeBase
-                              .map(base -> Url.parseOrThrow(failure.input(), base))
-                              .orElseGet(() -> Url.parseOrThrow(failure.input()));
-                        } catch (ValidationException e) {
-                          // successful test
-                          return;
-                        }
-
-                        Fail.fail("Expected parse failure, but got %s", parsed);
-                      });
-                }
+                      assertThat(((UrlParseResult.Success) result).url().toString())
+                          .isEqualTo(success.href());
+                    });
               }
+              if (testCase instanceof Failure failure) {
+                return dynamicTest(
+                    failure.name(),
+                    () -> {
+                      Optional<Url> maybeBase = failure.base().map(Url::parseOrThrow);
+
+                      Url parsed;
+                      try {
+                        parsed = maybeBase
+                            .map(base -> Url.parseOrThrow(failure.input(), base))
+                            .orElseGet(() -> Url.parseOrThrow(failure.input()));
+                      } catch (ValidationException e) {
+                        // successful test
+                        return;
+                      }
+
+                      Fail.fail("Expected parse failure, but got %s", parsed);
+                    });
+              }
+
+              throw new IllegalStateException("Unknown TestCase class: " + testCase);
             });
   }
 }

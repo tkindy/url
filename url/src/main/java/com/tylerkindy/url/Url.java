@@ -20,7 +20,6 @@ import com.tylerkindy.url.UrlParseResult.Failure;
 import com.tylerkindy.url.UrlParseResult.Success;
 import com.tylerkindy.url.UrlParseResult.SuccessWithErrors;
 import com.tylerkindy.url.UrlPath.NonOpaque;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -51,11 +50,16 @@ public final class Url {
   }
 
   private static Url extractOrThrow(String urlStr, UrlParseResult result) {
-    return switch (result) {
-      case Success(Url url) -> url;
-      case SuccessWithErrors(Url url, var errors) -> url;
-      case Failure(List<ValidationError> errors) -> throw new ValidationException(urlStr, errors);
-    };
+    if (result instanceof Success s) {
+      return s.url();
+    }
+    if (result instanceof SuccessWithErrors swe) {
+      return swe.url();
+    }
+    if (result instanceof Failure f) {
+      throw new ValidationException(urlStr, f.errors());
+    }
+    throw new IllegalStateException("Unknown result class: " + result);
   }
 
   Url(String scheme, String username, String password, Host host, Character port, UrlPath path, String query, String fragment) {
@@ -137,7 +141,7 @@ public final class Url {
       port().ifPresent(port -> output.append(":").append(Integer.toString(port)));
     });
 
-    if (host().isEmpty() && path instanceof NonOpaque p && p.segments().size() > 1 && p.segments().getFirst().isEmpty()) {
+    if (host().isEmpty() && path instanceof NonOpaque p && p.segments().size() > 1 && p.segments().get(0).isEmpty()) {
       output.append("/.");
     }
 

@@ -29,10 +29,13 @@ public sealed interface Host {
   record IpAddress(com.tylerkindy.url.IpAddress address) implements Host {
     @Override
     public String toString() {
-      return switch (address) {
-        case Ipv4Address ipv4 -> ipv4.toString();
-        case Ipv6Address ipv6 -> "[" + ipv6 + "]";
-      };
+      if (address instanceof Ipv4Address ipv4) {
+        return ipv4.toString();
+      }
+      if (address instanceof Ipv6Address ipv6) {
+        return "[" + ipv6 + "]";
+      }
+      throw new IllegalStateException("Unknown IpAddress class: " + address);
     }
   }
   record Opaque(String host) implements Host {

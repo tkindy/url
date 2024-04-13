@@ -74,7 +74,7 @@ final class Punycode {
           int k = BASE;
 
           while (true) {
-            int t = Math.clamp(k - bias, T_MIN, T_MAX);
+            int t = Math.min(Math.max(k - bias, T_MIN), T_MAX);
             if (q < t) {
               break;
             }
@@ -138,7 +138,7 @@ final class Punycode {
 
         i = Math.addExact(i, Math.multiplyExact(digit, w));
 
-        int t = Math.clamp(k - bias, T_MIN, T_MAX);
+        int t = Math.min(Math.max(k - bias, T_MIN), T_MAX);
         if (digit < t) {
           break;
         }

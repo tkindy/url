@@ -120,7 +120,7 @@ final class HostParser {
     Integer compress = null;
     Pointer pointer = new Pointer(input);
 
-    if (pointer.pointedAt() instanceof CodePoint(var c) && c == ':') {
+    if (pointer.pointedAt() instanceof CodePoint cp && cp.codePoint() == ':') {
       if (!pointer.doesRemainingStartWith(":")) {
         errors.add(new Ipv6InvalidCompression());
         return Optional.empty();
@@ -131,7 +131,8 @@ final class HostParser {
       compress = pieceIndex;
     }
 
-    while (pointer.pointedAt() instanceof CodePoint(var c)) {
+    while (pointer.pointedAt() instanceof CodePoint cp) {
+      var c = cp.codePoint();
       if (pieceIndex == 8) {
         errors.add(new Ipv6TooManyPieces());
         return Optional.empty();
@@ -152,15 +153,15 @@ final class HostParser {
 
       while (
           length < 4 &&
-              pointer.pointedAt() instanceof CodePoint(var c1) &&
-              isAsciiHexDigit(c1)
+              pointer.pointedAt() instanceof CodePoint cp1 &&
+              isAsciiHexDigit(cp1.codePoint())
       ) {
-        value = value * 0x10 + Character.digit(c1, 16);
+        value = value * 0x10 + Character.digit(cp1.codePoint(), 16);
         pointer.increase();
         length += 1;
       }
 
-      if (pointer.pointedAt() instanceof CodePoint(var c1) && c1 == '.') {
+      if (pointer.pointedAt() instanceof CodePoint cp1 && cp1.codePoint() == '.') {
         if (length == 0) {
           errors.add(new Ipv4InIpv6InvalidCodePoint());
           return Optional.empty();
@@ -174,10 +175,10 @@ final class HostParser {
 
         int numbersSeen = 0;
 
-        while (pointer.pointedAt() instanceof CodePoint(var c2)) {
+        while (pointer.pointedAt() instanceof CodePoint cp2) {
           Integer ipv4Piece = null;
           if (numbersSeen > 0) {
-            if (c2 == '.' && numbersSeen < 4) {
+            if (cp2.codePoint() == '.' && numbersSeen < 4) {
               pointer.increase();
             } else {
               errors.add(new Ipv4InIpv6InvalidCodePoint());
@@ -185,13 +186,13 @@ final class HostParser {
             }
           }
 
-          if (!(pointer.pointedAt() instanceof CodePoint(var c3) && isAsciiDigit(c3))) {
+          if (!(pointer.pointedAt() instanceof CodePoint cp3 && isAsciiDigit(cp3.codePoint()))) {
             errors.add(new Ipv4InIpv6InvalidCodePoint());
             return Optional.empty();
           }
 
-          while (pointer.pointedAt() instanceof CodePoint(var c4) && isAsciiDigit(c4)) {
-            int number = Character.digit(c4, 10);
+          while (pointer.pointedAt() instanceof CodePoint cp4 && isAsciiDigit(cp4.codePoint())) {
+            int number = Character.digit(cp4.codePoint(), 10);
             if (ipv4Piece == null) {
               ipv4Piece = number;
             } else if (ipv4Piece == 0) {
@@ -224,7 +225,7 @@ final class HostParser {
           return Optional.empty();
         }
         break;
-      } else if (pointer.pointedAt() instanceof CodePoint(var c1) && c1 == ':') {
+      } else if (pointer.pointedAt() instanceof CodePoint cp1 && cp1.codePoint() == ':') {
         pointer.increase();
 
         if (pointer.pointedAt() instanceof Eof) {
@@ -326,14 +327,14 @@ final class HostParser {
 
   private static boolean endsInANumber(String asciiDomain) {
     List<String> parts = new ArrayList<>(Arrays.asList(asciiDomain.split("\\.", -1)));
-    if (parts.getLast().isEmpty()) {
+    if (parts.get(parts.size() - 1).isEmpty()) {
       if (parts.size() == 1) {
         return false;
       }
-      parts.removeLast();
+      parts.remove(parts.size() - 1);
     }
 
-    String last = parts.getLast();
+    String last = parts.get(parts.size() - 1);
     if (
         !last.isEmpty() &&
         last
@@ -352,11 +353,11 @@ final class HostParser {
 
   private static Optional<Ipv4Address> parseIpv4(String input, List<ValidationError> errors) {
     List<String> parts = Arrays.asList(input.split("\\."));
-    if (parts.getLast().isEmpty()) {
+    if (parts.get(parts.size() - 1).isEmpty()) {
       errors.add(new Ipv4EmptyPart());
 
       if (parts.size() > 1) {
-        parts.removeLast();
+        parts.remove(parts.size() - 1);
       }
     }
 
@@ -386,11 +387,11 @@ final class HostParser {
     if (numbers.subList(0, numbers.size() - 1).stream().anyMatch(number -> number > 255)) {
       return Optional.empty();
     }
-    if (numbers.getLast() >= Math.pow(256, 5 - numbers.size())) {
+    if (numbers.get(parts.size() - 1) >= Math.pow(256, 5 - numbers.size())) {
       return Optional.empty();
     }
 
-    int ipv4 = numbers.removeLast();
+    int ipv4 = numbers.remove(parts.size() - 1);
     int counter = 0;
 
     for (int n : numbers) {

@@ -43,9 +43,12 @@ public sealed interface TestCase {
           .append('\'');
     });
 
-    switch (this) {
-      case Success s -> sb.append(" successfully parses");
-      case Failure f -> sb.append(" fails to parse");
+    if (this instanceof Success) {
+      sb.append(" successfully parses");
+    } else if (this instanceof Failure) {
+      sb.append(" fails to parse");
+    } else {
+      throw new IllegalStateException("Unknown TestCase class: " + this);
     }
 
     return sb.toString();
